@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <memory.h>
 #include <dirent.h>
-#include <sys/stat.h>
 
 #include <libavformat/avformat.h>
 
@@ -13,8 +12,11 @@ typedef struct
 } VInfos;
 
 VInfos * getVInfos(char * filename);
+
 void printVInfos(VInfos * vInfos);
+
 int shouldProcessFile(char * filename);
+
 char * scat(char * s1, char * s2);
 
 int main()
@@ -37,7 +39,7 @@ int main()
 		
 		sprintf(filePath, "%s/%s", dirName, file->d_name);
 		VInfos * vInfos = getVInfos(filePath);
-		if(strcmp(vInfos->codec, "h264") == 0)
+		if(vInfos->fps > 0 && strcmp(vInfos->codec, "h264") == 0)
 		{
 			if(vInfos->fps > 30)
 				printVInfos(vInfos);
@@ -47,12 +49,17 @@ int main()
 				char * fileOutW = scat(folderOutW, file->d_name);
 				char * fileW = scat("***REMOVED***", file->d_name);
 				char * fileBW = scat(fileW, ".bat");
-				FILE * filee = fopen(fileBW, "w");
-				fprintf(filee, "mkdir \"%s\"", folderOutW);
-				fprintf(filee, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"", fileInW, fileOutW);
-				fprintf(filee, "if exist \"%s\" del \"%s\"", fileOutW, fileInW);
-				fprintf(filee, "if exist \"%s\" del \"%s\"", fileBW, fileBW);
+				char * fileM = scat("***REMOVED***", file->d_name);
+				char * fileBM = scat(fileM, ".bat");
+				FILE * filee = fopen(fileBM, "w");
+				fprintf(filee, "mkdir \"%s\"\r\n", folderOutW);
+				fprintf(filee, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInW, fileOutW);
+				fprintf(filee, "if exist \"%s\" del \"%s\"\r\n", fileOutW, fileInW);
+				fprintf(filee, "if exist \"%s\" del \"%s\"\r\n", fileBW, fileBW);
 				fclose(filee);
+				printf("Wrote file %s\n", fileBM);
+				free(fileBM);
+				free(fileM);
 				free(fileBW);
 				free(fileW);
 				free(fileOutW);
@@ -105,7 +112,10 @@ VInfos * getVInfos(char * filename)
 		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++)
 		{
 			AVStream * stream = pFormatCtx->streams[i];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 			AVCodecContext * codec = stream->codec;
+#pragma clang diagnostic pop
 			if(codec->codec_type == AVMEDIA_TYPE_VIDEO)
 			{
 				enum AVCodecID codecID = codec->codec_id;
