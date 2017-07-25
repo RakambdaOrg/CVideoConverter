@@ -129,9 +129,9 @@ VInfos * getVInfos(char * filename, const char * name)
 			if(codec->codec_type == AVMEDIA_TYPE_VIDEO)
 			{
 				enum AVCodecID codecID = codec->codec_id;
-				vInfos->codec = avcodec_get_name(codecID);
+				vInfos->codec = avcodec_descriptor_get(codecID)->name;
 				
-				AVRational r = av_guess_frame_rate(pFormatCtx, stream, NULL);
+				AVRational r = codec->framerate;
 				vInfos->fps = ((double) r.num) / r.den;
 				break;
 			}
