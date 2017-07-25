@@ -2,27 +2,10 @@
 #include <memory.h>
 #include <dirent.h>
 
+#include "main.h"
+
 #include <libavformat/avformat.h>
-
-typedef struct
-{
-	char * filename;
-	const char * codec;
-	double fps;
-	double duration;
-} VInfos;
-
-VInfos * getVInfos(char * filename, const char * name);
-
-void printVInfos(VInfos * vInfos);
-
-int shouldProcessFile(char * filename);
-
-char * scat(char * s1, const char * s2);
-
-char * convertTime(char * out, int time);
-
-char * asMP4(const char * filename);
+#include <stdlib.h>
 
 int main()
 {
@@ -32,10 +15,12 @@ int main()
 	char folderInWindows[] = "***REMOVED***";
 	char folderOutWindows[] = "***REMOVED***";
 	
-	//char folderInMac[] = "/Users/mrcraftcod/Dropbox/Tha/Line/";
-	char folderInMac[] = "***REMOVED***";
+	//char folderInProcess[] = "***REMOVED***";
+	//char folderOutProcess[] = "***REMOVED***";
+	char * folderInProcess = folderInWindows;
+	char folderOutProcess[] = "***REMOVED***";
 	char filePath[512];
-	DIR * dir = opendir(folderInMac);
+	DIR * dir = opendir(folderInProcess);
 	
 	struct dirent * file;
 	while((file = readdir(dir)) != NULL)
@@ -43,7 +28,7 @@ int main()
 		if(!shouldProcessFile(file->d_name))
 			continue;
 		
-		sprintf(filePath, "%s/%s", folderInMac, file->d_name);
+		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		VInfos * vInfos = getVInfos(filePath, file->d_name);
 		if((vInfos->fps > 0 && vInfos->fps <= 30) && strcmp(vInfos->codec, "h264") == 0)
 		{
@@ -53,7 +38,7 @@ int main()
 			char * fileInW = scat(folderInWindows, file->d_name);
 			char * fileOutW = scat(folderOutWindows, vInfos->filename);
 			char * fileBW = scat("***REMOVED***", bFName);
-			char * fileBM = scat("***REMOVED***", bFName);
+			char * fileBM = scat(folderOutProcess, bFName);
 			FILE * filee = fopen(fileBM, "w");
 			if(filee != NULL)
 			{
