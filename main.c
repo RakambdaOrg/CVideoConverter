@@ -164,7 +164,7 @@ char * asMP4(const char * filename)
 	if(strcmp(dot, ".mp4") != 0)
 	{
 		if(strlen(dot) < 4)
-			realloc(&nFilename, sizeof(char) * ((dot - nFilename) + 5));
+			nFilename = realloc(&nFilename, sizeof(char) * ((dot - nFilename) + 5));
 		dot = strrchr(nFilename, '.');
 		strcpy(dot, ".mp4");
 	}
