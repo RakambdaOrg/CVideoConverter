@@ -5,6 +5,7 @@
 #include "main.h"
 
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #include <stdlib.h>
 
 int main()
@@ -39,8 +40,8 @@ int main()
 			char * fileOutW = scat(folderOutWindows, vInfos->filename);
 			char * fileBW = scat("***REMOVED***", bFName);
 			char * fileBM = scat(folderOutProcess, bFName);
-			FILE * filee = fopen(fileBM, "w");
-			if(filee != NULL)
+			FILE * filee;
+			if(0 && (filee = fopen(fileBM, "w")) != NULL)
 			{
 				fprintf(filee, "mkdir \"%s\"\r\n", folderOutWindows);
 				fprintf(filee, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInW, fileOutW);
@@ -80,10 +81,13 @@ char * scat(char * s1, const char * s2)
 	return str;
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 void printVInfos(VInfos * vInfos)
 {
 	printf("File:%s\n\tCodec:\t%s\n\tFPS:\t%lf\n", vInfos->filename, vInfos->codec, vInfos->fps);
 }
+#pragma clang diagnostic pop
 
 char * convertTime(char * out, int time)
 {
@@ -126,10 +130,11 @@ VInfos * getVInfos(char * filename, const char * name)
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 			AVCodecContext * codec = stream->codec;
 #pragma clang diagnostic pop
-			if(codec->codec_type == AVMEDIA_TYPE_VIDEO)
+			enum AVCodecID codecID = codec->codec_id;
+			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
+			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO)
 			{
-				enum AVCodecID codecID = codec->codec_id;
-				vInfos->codec = avcodec_descriptor_get(codecID)->name;
+				vInfos->codec = codecDescriptor->name;
 				
 				AVRational r = codec->framerate;
 				vInfos->fps = ((double) r.num) / r.den;
