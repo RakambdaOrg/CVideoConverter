@@ -9,7 +9,7 @@ ELSE ()
     link_directories(/usr/local/lib)
 ENDIF ()
 
-set(SOURCE_FILES main.c main.h)
+set(SOURCE_FILES main.c main.h database.c database.h)
 add_executable(VideoNormalizer ${SOURCE_FILES})
 IF (WIN32)
     target_link_libraries(VideoNormalizer libavutil libavformat libavcodec)
