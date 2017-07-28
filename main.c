@@ -3,8 +3,12 @@
 #include <dirent.h>
 
 #include "main.h"
+#include "database.h"
 
 #include <libavformat/avformat.h>
+#include <sys/stat.h>
+
+#define BUILD_BATCH 0
 
 int main()
 {
@@ -18,69 +22,90 @@ int main()
 	
 	//Configure the folders to build the batch files.
 #ifdef _WIN32
-	char folderInProcess[] = "***REMOVED***";
-	char folderOutProcess[] = "***REMOVED***";
-#else
 	char * folderInProcess = folderInWindows;
 	char folderOutProcess[] = "***REMOVED***";
+#else
+	//char folderInProcess[] = "***REMOVED***";
+	char folderInProcess[] = "***REMOVED***Line";
+	char folderOutProcess[] = "***REMOVED***";
+	mkdir(folderOutProcess, S_IRWXU);
 #endif
 	char filePath[512];
+	
+	char * databasePath = scat(folderOutProcess, "stats.sql");
+	Database * database = databaseOpen(databasePath);
+	free(databasePath);
 	
 	DIR * dir = opendir(folderInProcess);
 	struct dirent * file;
 	while((file = readdir(dir)) != NULL) //Loop through all the files
 	{
-		//Continue only if we should (if we think this file is a video, based on the extension).
-		if(!shouldProcessFile(file->d_name))
+		//Continue only if we should.
+		if(isSystemFile(file->d_name))
 			continue;
 		
 		//Get the informations about this video.
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		VInfos * vInfos = getVInfos(filePath, file->d_name);
 		
-		if((vInfos->fps > 0 && vInfos->fps <= 30) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if(vInfos->type == 0 || isPictureFile(file->d_name))
 		{
-			//Prepare folders & filenames
-			char bFName[200];
-			char bTime[9];
-			sprintf(bFName, "%s %s %s.bat", convertTime(bTime, (int) vInfos->duration), file->d_name, vInfos->codec);
-			char * fileInW = scat(folderInWindows, file->d_name);
-			char * fileOutW = scat(folderOutWindows, vInfos->filename);
-			char * fileBW = scat("***REMOVED***", bFName);
-			char * fileBM = scat(folderOutProcess, bFName);
-			
-			//Write file content.
-			FILE * filee;
-			if((filee = fopen(fileBM, "w")) != NULL)
+			databaseRegisterPicture(database, file->d_name);
+			free(vInfos->outFilename);
+			free(vInfos);
+			continue;
+		}
+		
+		databaseRegisterVideo(database, vInfos);
+		
+		if((vInfos->fps > 0 && vInfos->fps <= 60) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		{
+			if(BUILD_BATCH)
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
 			{
-				fprintf(filee, "mkdir \"%s\"\r\n", folderOutWindows);
-				fprintf(filee, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInW, fileOutW);
-				fprintf(filee, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutW, fileInW);
-				fprintf(filee, "if exist \"%s\" del \"%s\"\r\n", fileBW, fileBW);
-				fclose(filee);
+				//Prepare folders & filenames
+				char bFName[200];
+				sprintf(bFName, "%s %s %s.bat", vInfos->stringDuration, file->d_name, vInfos->codec);
+				char * fileInW = scat(folderInWindows, file->d_name);
+				char * fileOutW = scat(folderOutWindows, vInfos->outFilename);
+				char * fileBW = scat("***REMOVED***", bFName);
+				char * fileBM = scat(folderOutProcess, bFName);
+				
+				//Write file content.
+				FILE * filee;
+				if((filee = fopen(fileBM, "w")) != NULL)
+				{
+					fprintf(filee, "mkdir \"%s\"\r\n", folderOutWindows);
+					fprintf(filee, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInW, fileOutW);
+					fprintf(filee, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutW, fileInW);
+					fprintf(filee, "if exist \"%s\" del \"%s\"\r\n", fileBW, fileBW);
+					fclose(filee);
+				}
+				else
+					printf("Error writing file %s\n", fileBM);
+				
+				//Clean the house.
+				free(fileBM);
+				free(fileBW);
+				free(fileOutW);
+				free(fileInW);
 			}
-			else
-				printf("Error writing file %s\n", fileBM);
-			
-			//Clean the house.
-			free(fileBM);
-			free(fileBW);
-			free(fileOutW);
-			free(fileInW);
-			free(vInfos->filename);
+#pragma clang diagnostic pop
 		}
 		else
 		{
-			if(strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
-			{
-			}
+			if(vInfos->codec != NULL && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
+			{}//printf("Already converted file (%s, %lf, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->filename);
 			else
-				printf("Skipped file (%s, %lf): %s\n", vInfos->codec, vInfos->fps, vInfos->filename);
+				printf("Skipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
 		}
+		free(vInfos->outFilename);
 		free(vInfos);
 	}
 	
 	closedir(dir);
+	databaseClose(database);
 	
 	return 0;
 }
@@ -95,7 +120,6 @@ char * scat(char * s1, const char * s2)
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
-
 void printVInfos(VInfos * vInfos)
 {
 	printf("File:%s\n\tCodec:\t%s\n\tFPS:\t%lf\n", vInfos->filename, vInfos->codec, vInfos->fps);
@@ -120,7 +144,10 @@ VInfos * getVInfos(char * filename, const char * name)
 	vInfos->codec = NULL;
 	vInfos->fps = 0;
 	vInfos->duration = 0;
-	vInfos->filename = asMP4(name);
+	vInfos->filename = name;
+	vInfos->outFilename = asMP4(name);
+	vInfos->type = 0;
+	convertTime(vInfos->stringDuration, (int) vInfos->duration);
 	
 	//Open file.
 	AVFormatContext * pFormatCtx = avformat_alloc_context();
@@ -142,6 +169,8 @@ VInfos * getVInfos(char * filename, const char * name)
 			return vInfos; // Couldn't find stream information
 		
 		vInfos->duration = pFormatCtx->duration / ((double) AV_TIME_BASE);
+		convertTime(vInfos->stringDuration, (int) vInfos->duration);
+		
 		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) //For each available stream.
 		{
 			AVStream * stream = pFormatCtx->streams[i];
@@ -150,6 +179,7 @@ VInfos * getVInfos(char * filename, const char * name)
 			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
 			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
 			{
+				vInfos->type = 1;
 				vInfos->codec = codecDescriptor->name;
 				
 				AVRational r = stream->avg_frame_rate;
@@ -163,14 +193,24 @@ VInfos * getVInfos(char * filename, const char * name)
 	return vInfos;
 }
 
-int shouldProcessFile(char * filename)
+int isSystemFile(char * filename)
 {
 	if(*filename == '.')
-		return 0;
+		return 1;
 	char * dot = strrchr(filename, '.');
-	if(dot == NULL || strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".mjpeg") == 0 || strcmp(dot, ".ini") == 0)
+	if(dot == NULL || strcmp(dot, ".ini") == 0)
+		return 1;
+	return 0;
+}
+
+int isPictureFile(char * filename)
+{
+	char * dot = strrchr(filename, '.');
+	if(dot == NULL)
 		return 0;
-	return 1;
+	if(strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0)
+		return 1;
+	return 0;
 }
 
 char * asMP4(const char * filename)

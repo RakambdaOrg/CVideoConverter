@@ -3,10 +3,13 @@
 
 typedef struct
 {
-	char * filename;
+	const char * filename;
+	char * outFilename;
 	const char * codec;
 	double fps;
 	double duration;
+	char stringDuration[50];
+	int type;
 } VInfos;
 
 /**************************************************************
@@ -38,17 +41,30 @@ VInfos * getVInfos(char * filename, const char * name);
 void printVInfos(VInfos * vInfos);
 
 /**************************************************************
- * Tells if a file should be processed or not.
+ * Tells if a file is a system file.
  **************************************************************
  *
  * Input:
  *      filename: The name of the file.
  * Output:
- *      0 if shouldn't be processed, 1 if should be.
+ *      0 if isn't a system file, 1 if it is.
  * PreCond:
  * PostCond:
  */
-int shouldProcessFile(char * filename);
+int isSystemFile(char * filename);
+
+/**************************************************************
+ * Tells if a file is a picture.
+ **************************************************************
+ *
+ * Input:
+ *      filename: The name of the file.
+ * Output:
+ *      0 if isn't a picture, 1 if it is.
+ * PreCond:
+ * PostCond:
+ */
+int isPictureFile(char * filename);
 
 /**************************************************************
  * Concatenate two strings into a new one.
