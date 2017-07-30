@@ -29,18 +29,6 @@ typedef struct
 VInfos * getVInfos(char * filename, const char * name);
 
 /**************************************************************
- * Print a VInfos structure into the console.
- **************************************************************
- *
- * Input:
- *      vInfos: The structure to print.
- * Output:
- * PreCond:
- * PostCond:
- */
-void printVInfos(VInfos * vInfos);
-
-/**************************************************************
  * Tells if a file is a system file.
  **************************************************************
  *

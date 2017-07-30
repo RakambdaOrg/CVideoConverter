@@ -8,7 +8,7 @@
 #include <libavformat/avformat.h>
 #include <sys/stat.h>
 
-#define BUILD_BATCH 0
+#define BUILD_BATCH 1
 
 int main()
 {
@@ -25,9 +25,10 @@ int main()
 	char * folderInProcess = folderInWindows;
 	char folderOutProcess[] = "***REMOVED***";
 #else
-	//char folderInProcess[] = "***REMOVED***";
 	char folderInProcess[] = "***REMOVED***Line";
 	char folderOutProcess[] = "***REMOVED***";
+	//char folderInProcess[] = "***REMOVED***";
+	//char folderOutProcess[] = "***REMOVED***";
 	mkdir(folderOutProcess, S_IRWXU);
 #endif
 	char filePath[512];
@@ -58,7 +59,7 @@ int main()
 		
 		databaseRegisterVideo(database, vInfos);
 		
-		if((vInfos->fps > 0 && vInfos->fps <= 60) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if((vInfos->fps > 0 && vInfos->fps < 60) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 #pragma clang diagnostic push
@@ -66,7 +67,7 @@ int main()
 			{
 				//Prepare folders & filenames
 				char bFName[200];
-				sprintf(bFName, "%s %s %s.bat", vInfos->stringDuration, file->d_name, vInfos->codec);
+				sprintf(bFName, "%s %s %s %f.bat", vInfos->stringDuration, file->d_name, vInfos->codec, vInfos->fps);
 				char * fileInW = scat(folderInWindows, file->d_name);
 				char * fileOutW = scat(folderOutWindows, vInfos->outFilename);
 				char * fileBW = scat("***REMOVED***", bFName);
@@ -81,6 +82,7 @@ int main()
 					fprintf(filee, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutW, fileInW);
 					fprintf(filee, "if exist \"%s\" del \"%s\"\r\n", fileBW, fileBW);
 					fclose(filee);
+					printf("Wrote file %s.\n", fileBM);
 				}
 				else
 					printf("Error writing file %s\n", fileBM);
@@ -96,7 +98,8 @@ int main()
 		else
 		{
 			if(vInfos->codec != NULL && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
-			{}//printf("Already converted file (%s, %lf, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->filename);
+			{
+			}
 			else
 				printf("Skipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
 		}
@@ -117,15 +120,6 @@ char * scat(char * s1, const char * s2)
 	strcat(str, s2);
 	return str;
 }
-
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
-void printVInfos(VInfos * vInfos)
-{
-	printf("File:%s\n\tCodec:\t%s\n\tFPS:\t%lf\n", vInfos->filename, vInfos->codec, vInfos->fps);
-}
-
-#pragma clang diagnostic pop
 
 char * convertTime(char * out, int time)
 {
