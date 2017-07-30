@@ -100,6 +100,8 @@ int main()
 			if(vInfos->codec != NULL && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
 			{
 			}
+			else if(vInfos->fps > 239)
+				printf("Skipped slowmotion (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
 			else
 				printf("Skipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
 		}
