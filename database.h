@@ -2,7 +2,7 @@
 #define VIDEONORMALIZER_DATABASE_H
 
 #include <stdio.h>
-#include "main.h"
+#include "VInfos.h"
 
 typedef struct {
 	FILE * sqlFile;

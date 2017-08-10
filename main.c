@@ -3,7 +3,6 @@
 #include <dirent.h>
 
 #include "main.h"
-#include "database.h"
 
 #include <libavformat/avformat.h>
 #include <sys/stat.h>
@@ -25,91 +24,18 @@ int main()
 	char * folderInProcess = folderInWindows;
 	char folderOutProcess[] = "***REMOVED***";
 #else
-	char folderInProcess[] = "***REMOVED***Line";
+	char folderInProcess[] = "***REMOVED***";
 	char folderOutProcess[] = "***REMOVED***";
 	//char folderInProcess[] = "***REMOVED***";
 	//char folderOutProcess[] = "***REMOVED***";
-	mkdir(folderOutProcess, S_IRWXU);
 #endif
-	char filePath[512];
 	
 	char * databasePath = scat(folderOutProcess, "stats.sql");
 	Database * database = databaseOpen(databasePath);
 	free(databasePath);
 	
-	DIR * dir = opendir(folderInProcess);
-	struct dirent * file;
-	while((file = readdir(dir)) != NULL) //Loop through all the files
-	{
-		//Continue only if we should.
-		if(isSystemFile(file->d_name))
-			continue;
-		
-		//Get the informations about this video.
-		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
-		VInfos * vInfos = getVInfos(filePath, file->d_name);
-		
-		if(vInfos->type == 0 || isPictureFile(file->d_name))
-		{
-			databaseRegisterPicture(database, file->d_name);
-			free(vInfos->outFilename);
-			free(vInfos);
-			continue;
-		}
-		
-		databaseRegisterVideo(database, vInfos);
-		
-		if((vInfos->fps > 0 && vInfos->fps < 60) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
-		{
-			if(BUILD_BATCH)
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCDFAInspection"
-			{
-				//Prepare folders & filenames
-				char bFName[200];
-				sprintf(bFName, "%s %s %s %f.bat", vInfos->stringDuration, file->d_name, vInfos->codec, vInfos->fps);
-				char * fileInW = scat(folderInWindows, file->d_name);
-				char * fileOutW = scat(folderOutWindows, vInfos->outFilename);
-				char * fileBW = scat("***REMOVED***", bFName);
-				char * fileBM = scat(folderOutProcess, bFName);
-				
-				//Write file content.
-				FILE * filee;
-				if((filee = fopen(fileBM, "w")) != NULL)
-				{
-					fprintf(filee, "mkdir \"%s\"\r\n", folderOutWindows);
-					fprintf(filee, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInW, fileOutW);
-					fprintf(filee, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutW, fileInW);
-					fprintf(filee, "if exist \"%s\" del \"%s\"\r\n", fileBW, fileBW);
-					fclose(filee);
-					printf("Wrote file %s.\n", fileBM);
-				}
-				else
-					printf("Error writing file %s\n", fileBM);
-				
-				//Clean the house.
-				free(fileBM);
-				free(fileBW);
-				free(fileOutW);
-				free(fileInW);
-			}
-#pragma clang diagnostic pop
-		}
-		else
-		{
-			if(vInfos->codec != NULL && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
-			{
-			}
-			else if(vInfos->fps > 239)
-				printf("Skipped slowmotion (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
-			else
-				printf("Skipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
-		}
-		free(vInfos->outFilename);
-		free(vInfos);
-	}
+	processFolder(folderInWindows, folderOutWindows, folderInProcess, folderOutProcess, database);
 	
-	closedir(dir);
 	databaseClose(database);
 	
 	return 0;
@@ -194,7 +120,7 @@ int isSystemFile(char * filename)
 	if(*filename == '.')
 		return 1;
 	char * dot = strrchr(filename, '.');
-	if(dot == NULL || strcmp(dot, ".ini") == 0)
+	if(dot == NULL || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0)
 		return 1;
 	return 0;
 }
@@ -221,4 +147,113 @@ char * asMP4(const char * filename)
 		strcpy(dot, ".mp4");
 	}
 	return nFilename;
+}
+
+void processFolder(char * folderInWindows, char * folderOutWindows, char * folderInProcess, char * folderOutProcess, Database * database)
+{
+	printf("Processing folder %s\n", folderInWindows);
+
+#ifndef _WIN32
+	mkdir(folderOutProcess, S_IRWXU);
+#endif
+	
+	char filePath[512];
+	
+	DIR * dir = opendir(folderInProcess);
+	struct dirent * file;
+	while((file = readdir(dir)) != NULL) //Loop through all the files
+	{
+		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0)
+			continue;
+		
+		if(file->d_type == DT_DIR)
+		{
+			char * temp = scat(folderInWindows, file->d_name);
+			char * nFolderInWindows = scat(temp, "\\");
+			free(temp);
+			
+			temp = scat(folderOutWindows, file->d_name);
+			char * nFolderOutWindows = scat(temp, "\\");
+			free(temp);
+			
+			temp = scat(folderInProcess, file->d_name);
+			char * nFolderInProcess = scat(temp, "/");
+			free(temp);
+			
+			processFolder(nFolderInWindows, nFolderOutWindows, nFolderInProcess, folderOutProcess, database);
+			
+			free(nFolderOutWindows);
+			free(nFolderInWindows);
+			continue;
+		}
+		
+		//Continue only if we should.
+		if(isSystemFile(file->d_name))
+			continue;
+		
+		//Get the informations about this video.
+		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
+		VInfos * vInfos = getVInfos(filePath, file->d_name);
+		
+		if(vInfos->type == 0 || isPictureFile(file->d_name))
+		{
+			databaseRegisterPicture(database, file->d_name);
+			free(vInfos->outFilename);
+			free(vInfos);
+			continue;
+		}
+		
+		databaseRegisterVideo(database, vInfos);
+		
+		if((vInfos->fps > 0 && vInfos->fps < 60) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		{
+			if(BUILD_BATCH)
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
+			{
+				//Prepare folders & filenames
+				char batFilename[200];
+				sprintf(batFilename, "%s %s %s %f.bat", vInfos->stringDuration, file->d_name, vInfos->codec, vInfos->fps);
+				char * fileInWindows = scat(folderInWindows, file->d_name);
+				char * fileOutWindows = scat(folderOutWindows, vInfos->outFilename);
+				char * fileBatWindows = scat("***REMOVED***", batFilename);
+				char * fileBatMac = scat(folderOutProcess, batFilename);
+				
+				//Write file content.
+				FILE * batFile;
+				if((batFile = fopen(fileBatMac, "w")) != NULL)
+				{
+					fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
+					fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
+					fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
+					fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
+					fclose(batFile);
+					printf("Wrote file %s.\n", fileBatMac);
+				}
+				else
+					printf("Error writing file %s\n", fileBatMac);
+				
+				//Clean the house.
+				free(fileBatMac);
+				free(fileBatWindows);
+				free(fileOutWindows);
+				free(fileInWindows);
+			}
+#pragma clang diagnostic pop
+		}
+		else
+		{
+			if(vInfos->codec != NULL && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
+			{
+			}
+			else if(vInfos->fps > 239)
+				printf("Skipped slowmotion (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
+			else
+				printf("Skipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
+		}
+		free(vInfos->outFilename);
+		free(vInfos);
+	}
+	
+	closedir(dir);
 }

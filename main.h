@@ -1,16 +1,8 @@
 #ifndef VIDEONORMALIZER_MAIN_H
 #define VIDEONORMALIZER_MAIN_H
 
-typedef struct
-{
-	const char * filename;
-	char * outFilename;
-	const char * codec;
-	double fps;
-	double duration;
-	char stringDuration[50];
-	int type;
-} VInfos;
+#include "database.h"
+#include "VInfos.h"
 
 /**************************************************************
  * Get the useful informations about a video.
@@ -96,5 +88,7 @@ char * convertTime(char * out, int time);
  *      The user is responsible of freeing the created string.
  */
 char * asMP4(const char * filename);
+
+void processFolder(char * folderInWindows, char * folderOutWindows, char * folderInProcess, char * folderOutProcess, Database * database);
 
 #endif
