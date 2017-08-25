@@ -193,6 +193,7 @@ void processFolder(char * folderInWindows, char * folderOutWindows, char * folde
 		
 		//Get the informations about this video.
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
+		printf("Processing file %s\n", filePath);
 		VInfos * vInfos = getVInfos(filePath, file->d_name);
 		
 		if(vInfos->type == 0 || isPictureFile(file->d_name))
@@ -228,10 +229,10 @@ void processFolder(char * folderInWindows, char * folderOutWindows, char * folde
 					fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
 					fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
 					fclose(batFile);
-					printf("Wrote file %s.\n", fileBatMac);
+					printf("\tWrote file %s.\n", fileBatMac);
 				}
 				else
-					printf("Error writing file %s\n", fileBatMac);
+					printf("\tError writing file %s\n", fileBatMac);
 				
 				//Clean the house.
 				free(fileBatMac);
@@ -247,9 +248,9 @@ void processFolder(char * folderInWindows, char * folderOutWindows, char * folde
 			{
 			}
 			else if(vInfos->fps > 239)
-				printf("Skipped slowmotion (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
+				printf("\tSkipped slowmotion (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
 			else
-				printf("Skipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
+				printf("\tSkipped file (%s, %lf, %s, %s): %s\n", vInfos->codec, vInfos->fps, vInfos->stringDuration, vInfos->type == 0 ? "P" : "V", vInfos->filename);
 		}
 		free(vInfos->outFilename);
 		free(vInfos);
