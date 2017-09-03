@@ -9,7 +9,7 @@ typedef struct
 	double fps;
 	double duration;
 	char stringDuration[50];
-	int type;
+	int isPicture;
 } VInfos;
 
 #endif

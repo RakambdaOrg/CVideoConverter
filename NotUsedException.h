@@ -1,0 +1,8 @@
+#ifndef VIDEONORMALIZER_NOTUSEDEXCEPTION_H
+#define VIDEONORMALIZER_NOTUSEDEXCEPTION_H
+
+class NotUsedException
+{
+};
+
+#endif
