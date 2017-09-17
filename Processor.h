@@ -85,6 +85,13 @@ private:
 	 * @return The new name. The user is responsible of freeing it.
 	 */
 	static char * asMP4(const char * filename);
+	
+	/**
+	 * Tell if a file should be skipped.
+	 * @param filename The name of the file.
+	 * @return True should be skipped, false else.
+	 */
+	bool shouldSkip(char * filename);
 };
 
 #endif

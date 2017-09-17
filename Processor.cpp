@@ -7,6 +7,7 @@ extern "C" {
 #include <sys/stat.h>
 #include <dirent.h>
 #include <iostream>
+#include <libgen.h>
 #include "Processor.h"
 #include "NotUsedException.h"
 
@@ -108,6 +109,12 @@ bool Processor::isSystemFile(char * filename)
 	return dot == nullptr || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0;
 }
 
+bool Processor::shouldSkip(char * filename)
+{
+	char * dot = strrchr(filename, '.');
+	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0;
+}
+
 bool Processor::isPictureFile(char * filename)
 {
 	char * dot = strrchr(filename, '.');
@@ -139,6 +146,7 @@ void Processor::process()
 #endif
 	
 	char filePath[512];
+	char * dirName = basename(folderInProcess);
 	
 	DIR * dir = opendir(folderInProcess);
 	struct dirent * file;
@@ -174,6 +182,9 @@ void Processor::process()
 		if(isSystemFile(file->d_name))
 			continue;
 		
+		if(shouldSkip(file->d_name))
+			continue;
+		
 		//Get the informations about this video.
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		std::cout << "Processing file " << filePath << std::endl;
@@ -195,7 +206,7 @@ void Processor::process()
 			{
 				//Prepare folders & filenames
 				char batFilename[200];
-				sprintf(batFilename, "%s %s %s %f.bat", vInfos->stringDuration, file->d_name, vInfos->codec, vInfos->fps);
+				sprintf(batFilename, "%s %s %s %s %f.bat", vInfos->stringDuration, dirName, file->d_name, vInfos->codec, vInfos->fps);
 				char * fileInWindows = scat(folderInWindows, file->d_name);
 				char * fileOutWindows = scat(folderOutWindows, vInfos->outFilename);
 				char * fileBatWindows = scat(R"(***REMOVED***)", batFilename);

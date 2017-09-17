@@ -26,10 +26,10 @@ int main()
 #endif
 	
 	char * databasePath = Processor::scat(folderOutProcess, "stats.sql");
-	Database * database = new Database(databasePath);
+	auto * database = new Database(databasePath);
 	free(databasePath);
 	
-	Processor * processor = new Processor(database, folderInProcess, folderInWindows, folderOutWindows, folderOutProcess);
+	auto * processor = new Processor(database, folderInProcess, folderInWindows, folderOutWindows, folderOutProcess);
 	processor->process();
 	
 	delete processor;
