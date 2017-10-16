@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <memory.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include "Database.h"
 #include "IOException.h"
 #include "NotUsedException.h"
@@ -41,7 +44,7 @@ void Database::registerPicture(Database * database, char * filename)
 
 const char * Database::getDatetime(char * buffer, const char * filename)
 {
-	char * dot = strrchr(filename, '.');
+	const char * dot = strrchr(filename, '.');
 	unsigned int i = 0;
 	while(filename + i != dot && filename[i] != '\0')
 	{

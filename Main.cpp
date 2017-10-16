@@ -1,4 +1,7 @@
+#include <cstdlib>
 #include "Processor.h"
+
+#define ***REMOVED*** 1
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -11,25 +14,35 @@ int main()
 	avcodec_register_all();
 	
 	//Configure folders to set in the batch files
-	char folderInWindows[] = "***REMOVED***";
-	char folderOutWindows[] = R"(***REMOVED***)";
+	const char * folderInWindows = nullptr;
+	const char * folderOutWindows = nullptr;
+	const char * folderBatWindows = nullptr;
 	
 	//Configure the folders to build the batch files.
-#ifdef _WIN32
-	char * folderInProcess = folderInWindows;
-	char folderOutProcess[] = "***REMOVED***";
-#else
-	char folderInProcess[] = "***REMOVED***";
-	char folderOutProcess[] = "***REMOVED***";
-	//char folderInProcess[] = "***REMOVED***";
-	//char folderOutProcess[] = "***REMOVED***";
-#endif
+	const char * folderInProcess = nullptr;
+	const char * folderOutProcess = nullptr;
+	
+	if(***REMOVED***) //***REMOVED***
+	{
+		folderInWindows = "***REMOVED***";
+		folderOutWindows = R"(***REMOVED***)";
+		folderBatWindows = R"(***REMOVED***)";
+		
+		//Configure the folders to build the batch files.
+		#ifdef _WIN32
+			folderInProcess = folderInWindows;
+			folderOutProcess = R("***REMOVED***");
+		#else
+			folderInProcess = "***REMOVED***";
+			folderOutProcess = "***REMOVED***";
+		#endif
+	}
 	
 	char * databasePath = Processor::scat(folderOutProcess, "stats.sql");
 	auto * database = new Database(databasePath);
 	free(databasePath);
 	
-	auto * processor = new Processor(database, folderInProcess, folderInWindows, folderOutWindows, folderOutProcess);
+	auto * processor = new Processor(database, folderInProcess, folderInWindows, folderOutWindows, folderOutProcess, folderBatWindows);
 	processor->process();
 	
 	delete processor;

@@ -25,8 +25,9 @@ public:
 	 * @param folderInWindows The folder the batch file will take the inputs.
 	 * @param folderOutWindows The folder the batch file will put the outputs.
 	 * @param folderOutProcess The folder where to save the batch files.
+	 * @param folderBatWindows The folder where the BAT files are on windows.
 	 */
-	Processor(Database * database, char * folderInProcess, char * folderInWindows, char * folderOutWindows, char * folderOutProcess);
+	Processor(Database * database, const char * folderInProcess, const char * folderInWindows, const char * folderOutWindows, const char * folderOutProcess, const char * folderBatWindows);
 
 	/**
 	 * Start this processor.
@@ -52,10 +53,11 @@ private:
 	static char * convertTime(char * out, int time);
 	
 	Database * database;
-	char * folderInProcess;
-	char * folderOutProcess;
-	char * folderInWindows;
-	char * folderOutWindows;
+	const char * folderInProcess;
+	const char * folderOutProcess;
+	const char * folderInWindows;
+	const char * folderOutWindows;
+	const char * folderBatWindows;
 	
 	/**
 	 * Get the informations about a file.
@@ -92,6 +94,8 @@ private:
 	 * @return True should be skipped, false else.
 	 */
 	bool shouldSkip(char * filename);
+	
+	bool fileExists(const char * name);
 };
 
 #endif

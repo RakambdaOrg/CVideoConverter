@@ -10,6 +10,7 @@ extern "C" {
 #include <libgen.h>
 #include "Processor.h"
 #include "NotUsedException.h"
+#include "VInfos.h"
 
 #define BUILD_BATCH true
 
@@ -18,21 +19,28 @@ Processor::Processor()
 	throw NotUsedException();
 }
 
-Processor::Processor(Database * database, char * folderInProcess, char * folderInWindows, char * folderOutWindows, char * folderOutProcess)
+Processor::Processor(Database * database, const char * folderInProcess, const char * folderInWindows, const char * folderOutWindows, const char * folderOutProcess, const char * folderBatWindows)
 {
 	this->database = database;
 	this->folderInProcess = folderInProcess;
 	this->folderOutProcess = folderOutProcess;
 	this->folderInWindows = folderInWindows;
 	this->folderOutWindows = folderOutWindows;
+	this->folderBatWindows = folderBatWindows;
 }
 
 char * Processor::scat(const char * s1, const char * s2)
 {
-	char * str = (char *) malloc(sizeof(char) * (strlen(s1) + strlen(s2) + 1));
+	auto * str = (char *) malloc(sizeof(char) * (strlen(s1) + strlen(s2) + 1));
 	strcpy(str, s1);
 	strcat(str, s2);
 	return str;
+}
+
+bool Processor::fileExists(const char * name)
+{
+	struct stat buffer{};
+	return (stat(name, &buffer) == 0);
 }
 
 char * Processor::convertTime(char * out, int time)
@@ -48,13 +56,13 @@ char * Processor::convertTime(char * out, int time)
 VInfos * Processor::getVInfos(char * filename, const char * name)
 {
 	//Prepare structure
-	VInfos * vInfos = (VInfos *) malloc(sizeof(VInfos));
+	auto * vInfos = (VInfos *) malloc(sizeof(VInfos));
 	vInfos->codec = nullptr;
 	vInfos->fps = 0;
 	vInfos->duration = 0;
 	vInfos->filename = name;
 	vInfos->outFilename = asMP4(name);
-	vInfos->isPicture = false;
+	vInfos->type = 'U';
 	convertTime(vInfos->stringDuration, (int) vInfos->duration);
 	
 	//Open file.
@@ -73,6 +81,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 	}
 	else
 	{
+		vInfos->type = 'P';
 		if(avformat_find_stream_info(pFormatCtx, nullptr) < 0)
 			return vInfos; // Couldn't find stream information
 		
@@ -87,7 +96,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
 			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
 			{
-				vInfos->isPicture = true;
+				vInfos->type = 'V';
 				vInfos->codec = codecDescriptor->name;
 				
 				AVRational r = stream->avg_frame_rate;
@@ -112,7 +121,7 @@ bool Processor::isSystemFile(char * filename)
 bool Processor::shouldSkip(char * filename)
 {
 	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0;
+	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0;
 }
 
 bool Processor::isPictureFile(char * filename)
@@ -139,14 +148,13 @@ char * Processor::asMP4(const char * filename)
 
 void Processor::process()
 {
-	std::cout << "Processing folder " << folderInWindows << std::endl;
+	std::cout << std::endl << "Processing folder " << folderInWindows << std::endl;
 
 #ifndef _WIN32
 	mkdir(folderOutProcess, S_IRWXU);
 #endif
 	
 	char filePath[512];
-	char * dirName = basename(folderInProcess);
 	
 	DIR * dir = opendir(folderInProcess);
 	struct dirent * file;
@@ -169,7 +177,7 @@ void Processor::process()
 			char * nFolderInProcess = scat(temp, "/");
 			free(temp);
 			
-			Processor * processor = new Processor(database, nFolderInProcess, nFolderInWindows, nFolderOutWindows, folderOutProcess);
+			auto * processor = new Processor(database, nFolderInProcess, nFolderInWindows, nFolderOutWindows, folderOutProcess, folderBatWindows);
 			processor->process();
 			delete processor;
 			
@@ -187,10 +195,11 @@ void Processor::process()
 		
 		//Get the informations about this video.
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
-		std::cout << "Processing file " << filePath << std::endl;
+		//std::cout << "Processing file " << filePath << std::endl;
+		std::cout << "\t" << "o";
 		VInfos * vInfos = getVInfos(filePath, file->d_name);
 		
-		if(vInfos->isPicture == 0 || isPictureFile(file->d_name))
+		if(vInfos->type == 'P' || isPictureFile(file->d_name))
 		{
 			database->registerPicture(database, file->d_name);
 			free(vInfos->outFilename);
@@ -200,32 +209,38 @@ void Processor::process()
 		
 		database->registerVideo(database, vInfos);
 		
-		if((vInfos->fps > 0 && vInfos->fps < 60) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if((vInfos->fps > 0 && (vInfos->fps < 60 || vInfos->fps == 1000)) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 			{
 				//Prepare folders & filenames
 				char batFilename[200];
-				sprintf(batFilename, "%s %s %s %s %f.bat", vInfos->stringDuration, dirName, file->d_name, vInfos->codec, vInfos->fps);
+				char * ttt = strdup(folderInProcess);
+				sprintf(batFilename, "%s %s %s %s %f.bat", vInfos->stringDuration, basename(ttt), file->d_name, vInfos->codec, vInfos->fps);
+				free(ttt);
 				char * fileInWindows = scat(folderInWindows, file->d_name);
 				char * fileOutWindows = scat(folderOutWindows, vInfos->outFilename);
-				char * fileBatWindows = scat(R"(***REMOVED***)", batFilename);
+				char * fileBatWindows = scat(folderBatWindows, batFilename);
 				char * fileBatMac = scat(folderOutProcess, batFilename);
-				
-				//Write file content.
-				FILE * batFile;
-				if((batFile = fopen(fileBatMac, "w")) != nullptr)
+				if(!fileExists(fileBatMac))
 				{
-					fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
-					fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
-					fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
-					fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
-					fclose(batFile);
-					std::cout << "\tWrote file " << fileBatMac << "." << std::endl;
+					//Write file content.
+					FILE * batFile;
+					if((batFile = fopen(fileBatMac, "w")) != nullptr)
+					{
+						fprintf(batFile, "title %s\r\n", batFilename);
+						fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
+						fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
+						fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
+						fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
+						fclose(batFile);
+						std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
+					}
+					else
+						std::cout << std::endl << "\tError writing file " << fileBatMac << std::endl;
 				}
 				else
-					std::cout << "\tError writing file " << fileBatMac << std::endl;
-				
+					std::cout << "\tFile " << fileBatMac << " already exists." << std::endl;
 				//Clean the house.
 				free(fileBatMac);
 				free(fileBatWindows);
@@ -239,9 +254,9 @@ void Processor::process()
 			{
 			}
 			else if(vInfos->fps > 239)
-				std::cout << "\tSkipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << (vInfos->isPicture ? "P" : "V") << "):" << vInfos->filename << std::endl;
+				std::cout << "\t" << "Skipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
 			else
-				std::cout << "\tSkipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << (vInfos->isPicture ? "P" : "V") << "):" << vInfos->filename << std::endl;
+				std::cout << "\t" << "Skipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
 		}
 		free(vInfos->outFilename);
 		free(vInfos);
