@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -10,7 +11,6 @@ extern "C" {
 #include <libgen.h>
 #include "Processor.h"
 #include "NotUsedException.h"
-#include "VInfos.h"
 
 #define BUILD_BATCH true
 
@@ -19,7 +19,7 @@ Processor::Processor()
 	throw NotUsedException();
 }
 
-Processor::Processor(Database * database, const char * folderInProcess, const char * folderInWindows, const char * folderOutWindows, const char * folderOutProcess, const char * folderBatWindows)
+Processor::Processor(Database * database, string &folderInProcess, string &folderInWindows, string &folderOutWindows, string &folderOutProcess, string &folderBatWindows, vector<string> &folderBannedWindows)
 {
 	this->database = database;
 	this->folderInProcess = folderInProcess;
@@ -27,47 +27,44 @@ Processor::Processor(Database * database, const char * folderInProcess, const ch
 	this->folderInWindows = folderInWindows;
 	this->folderOutWindows = folderOutWindows;
 	this->folderBatWindows = folderBatWindows;
+	this->folderBannedWindows = folderBannedWindows;
 }
 
-char * Processor::scat(const char * s1, const char * s2)
-{
-	auto * str = (char *) malloc(sizeof(char) * (strlen(s1) + strlen(s2) + 1));
-	strcpy(str, s1);
-	strcat(str, s2);
-	return str;
-}
-
-bool Processor::fileExists(const char * name)
+bool Processor::fileExists(const string &name)
 {
 	struct stat buffer{};
-	return (stat(name, &buffer) == 0);
+	return (stat(name.c_str(), &buffer) == 0);
 }
 
-char * Processor::convertTime(char * out, int time)
+string Processor::convertTime(int time)
 {
+	string out;
+	out.reserve(10);
 	int sec = time % 60;
 	time /= 60;
 	int min = time % 60;
 	time /= 60;
-	sprintf(out, "%02dh%02dm%02d", time, min, sec);
+	sprintf(const_cast<char *>(out.c_str()), "%02dh%02dm%02d", time, min, sec);
 	return out;
 }
 
-VInfos * Processor::getVInfos(char * filename, const char * name)
+VInfos * Processor::getVInfos(string &filename, const string &name)
 {
 	//Prepare structure
 	auto * vInfos = (VInfos *) malloc(sizeof(VInfos));
-	vInfos->codec = nullptr;
+	vInfos->codec = string("");
 	vInfos->fps = 0;
 	vInfos->duration = 0;
 	vInfos->filename = name;
-	vInfos->outFilename = asMP4(name);
+	vInfos->outFilename = string(name);
+	if(!ends_with(vInfos->outFilename, ".mp4"))
+		vInfos->outFilename = vInfos->outFilename + ".mp4";
 	vInfos->type = 'U';
-	convertTime(vInfos->stringDuration, (int) vInfos->duration);
+	convertTime((int) vInfos->duration);
 	
 	//Open file.
 	AVFormatContext * pFormatCtx = avformat_alloc_context();
-	int errorID = avformat_open_input(&pFormatCtx, filename, nullptr, nullptr);
+	int errorID = avformat_open_input(&pFormatCtx, filename.c_str(), nullptr, nullptr);
 	
 	if(errorID < 0 || pFormatCtx->nb_streams == 0) //If an error happened when reading the file.
 	{
@@ -86,7 +83,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 			return vInfos; // Couldn't find stream information
 		
 		vInfos->duration = pFormatCtx->duration / ((double) AV_TIME_BASE);
-		convertTime(vInfos->stringDuration, (int) vInfos->duration);
+		convertTime((int) vInfos->duration);
 		
 		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) //For each available stream.
 		{
@@ -97,7 +94,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
 			{
 				vInfos->type = 'V';
-				vInfos->codec = codecDescriptor->name;
+				vInfos->codec = string(codecDescriptor->name);
 				
 				AVRational r = stream->avg_frame_rate;
 				vInfos->fps = ((double) r.num) / r.den;
@@ -110,40 +107,21 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 	return vInfos;
 }
 
-bool Processor::isSystemFile(char * filename)
+bool Processor::isSystemFile(string filename)
 {
-	if(*filename == '.')
+	if(filename.rfind('.', 0) == 0)
 		return true;
-	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0;
+	return ends_with(filename, ".ini") || ends_with(filename, ".txt");
 }
 
-bool Processor::shouldSkip(char * filename)
+bool Processor::shouldSkip(string filename)
 {
-	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0;
+	return ends_with(filename, ".loc") || ends_with(filename, ".msg") || ends_with(filename, ".pbf") || ends_with(filename, ".gif");
 }
 
-bool Processor::isPictureFile(char * filename)
+bool Processor::isPictureFile(string filename)
 {
-	char * dot = strrchr(filename, '.');
-	if(dot == nullptr)
-		return false;
-	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0;
-}
-
-char * Processor::asMP4(const char * filename)
-{
-	char * nFilename = strdup(filename);
-	char * dot = strrchr(nFilename, '.');
-	if(strcmp(dot, ".mp4") != 0)
-	{
-		if(strlen(dot) < 4)
-			nFilename = (char *) realloc(&nFilename, sizeof(char) * ((dot - nFilename) + 5));
-		dot = strrchr(nFilename, '.');
-		strcpy(dot, ".mp4");
-	}
-	return nFilename;
+	return ends_with(filename, ".jpg") || ends_with(filename, ".png") || ends_with(filename, ".jpeg") || ends_with(filename, ".JPG") || ends_with(filename, ".PNG");
 }
 
 void Processor::process()
@@ -151,12 +129,10 @@ void Processor::process()
 	std::cout << std::endl << "Processing folder " << folderInWindows << std::endl;
 
 #ifndef _WIN32
-	mkdir(folderOutProcess, S_IRWXU);
+	mkdir(folderOutProcess.c_str(), S_IRWXU);
 #endif
 	
-	char filePath[512];
-	
-	DIR * dir = opendir(folderInProcess);
+	DIR * dir = opendir(folderInProcess.c_str());
 	struct dirent * file;
 	while((file = readdir(dir)) != nullptr) //Loop through all the files
 	{
@@ -165,24 +141,23 @@ void Processor::process()
 		
 		if(file->d_type == DT_DIR)
 		{
-			char * temp = scat(folderInWindows, file->d_name);
-			char * nFolderInWindows = scat(temp, "\\");
-			free(temp);
+			string temp = folderInWindows + file->d_name;
+			string nFolderInWindows = temp + "\\";
 			
-			temp = scat(folderOutWindows, file->d_name);
-			char * nFolderOutWindows = scat(temp, "\\");
-			free(temp);
+			temp = folderOutWindows + file->d_name;
+			string nFolderOutWindows = temp + "\\";
 			
-			temp = scat(folderInProcess, file->d_name);
-			char * nFolderInProcess = scat(temp, "/");
-			free(temp);
+			temp = folderInProcess + file->d_name;
+			string nFolderInProcess = temp + "/";
 			
-			auto * processor = new Processor(database, nFolderInProcess, nFolderInWindows, nFolderOutWindows, folderOutProcess, folderBatWindows);
-			processor->process();
-			delete processor;
+			auto itemItr = std::find(folderBannedWindows.begin(), folderBannedWindows.end(), nFolderInWindows);
+			if(itemItr == folderBannedWindows.end())
+			{
+				auto * processor = new Processor(database, nFolderInProcess, nFolderInWindows, nFolderOutWindows, folderOutProcess, folderBatWindows, folderBannedWindows);
+				processor->process();
+				delete processor;
+			}
 			
-			free(nFolderOutWindows);
-			free(nFolderInWindows);
 			continue;
 		}
 		
@@ -194,7 +169,7 @@ void Processor::process()
 			continue;
 		
 		//Get the informations about this video.
-		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
+		string filePath = folderInProcess + "/" + file->d_name;
 		//std::cout << "Processing file " << filePath << std::endl;
 		std::cout << "\t" << "o";
 		VInfos * vInfos = getVInfos(filePath, file->d_name);
@@ -202,37 +177,35 @@ void Processor::process()
 		if(vInfos->type == 'P' || isPictureFile(file->d_name))
 		{
 			database->registerPicture(database, file->d_name);
-			free(vInfos->outFilename);
 			free(vInfos);
 			continue;
 		}
 		
 		database->registerVideo(database, vInfos);
 		
-		if((vInfos->fps > 0 && (vInfos->fps < 60 || vInfos->fps == 1000)) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if((vInfos->fps > 0 && (vInfos->fps < 60 || vInfos->fps == 1000)) && vInfos->codec == "h264") //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 			{
 				//Prepare folders & filenames
 				char batFilename[200];
-				char * ttt = strdup(folderInProcess);
-				sprintf(batFilename, "%s %s %s %s %f.bat", vInfos->stringDuration, basename(ttt), file->d_name, vInfos->codec, vInfos->fps);
-				free(ttt);
-				char * fileInWindows = scat(folderInWindows, file->d_name);
-				char * fileOutWindows = scat(folderOutWindows, vInfos->outFilename);
-				char * fileBatWindows = scat(folderBatWindows, batFilename);
-				char * fileBatMac = scat(folderOutProcess, batFilename);
+				string ttt = string(folderInProcess);
+				sprintf(batFilename, "%s %s %s %s %f.bat", vInfos->stringDuration, basename(const_cast<char *>(ttt.c_str())), file->d_name, vInfos->codec.c_str(), vInfos->fps);
+				string fileInWindows = folderInWindows + file->d_name;
+				string fileOutWindows = folderOutWindows + vInfos->outFilename;
+				string fileBatWindows = folderBatWindows + batFilename;
+				string fileBatMac = folderOutProcess + batFilename;
 				if(!fileExists(fileBatMac))
 				{
 					//Write file content.
 					FILE * batFile;
-					if((batFile = fopen(fileBatMac, "w")) != nullptr)
+					if((batFile = fopen(fileBatMac.c_str(), "w")) != nullptr)
 					{
 						fprintf(batFile, "title %s\r\n", batFilename);
-						fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
-						fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
-						fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
-						fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
+						fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows.c_str());
+						fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows.c_str(), fileOutWindows.c_str());
+						fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows.c_str(), fileInWindows.c_str());
+						fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows.c_str(), fileBatWindows.c_str());
 						fclose(batFile);
 						std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
 					}
@@ -242,15 +215,11 @@ void Processor::process()
 				else
 					std::cout << "\tFile " << fileBatMac << " already exists." << std::endl;
 				//Clean the house.
-				free(fileBatMac);
-				free(fileBatWindows);
-				free(fileOutWindows);
-				free(fileInWindows);
 			}
 		}
 		else
 		{
-			if(vInfos->codec != nullptr && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
+			if(vInfos->codec == "hevc") //Ignore h265 as this is the result we want.
 			{
 			}
 			else if(vInfos->fps > 239)
@@ -258,9 +227,15 @@ void Processor::process()
 			else
 				std::cout << "\t" << "Skipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
 		}
-		free(vInfos->outFilename);
 		free(vInfos);
 	}
 	
 	closedir(dir);
+}
+
+bool Processor::ends_with(std::string const &value, std::string const &ending)
+{
+	if(ending.size() > value.size())
+		return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
