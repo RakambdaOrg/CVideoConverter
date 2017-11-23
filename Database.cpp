@@ -3,21 +3,18 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
 #include "Database.h"
 #include "IOException.h"
 #include "NotUsedException.h"
-
-using namespace std;
 
 Database::Database()
 {
 	throw NotUsedException();
 }
 
-Database::Database(string filepath)
+Database::Database(char * filepath)
 {
-	sqlFile = fopen(filepath.c_str(), "w");
+	sqlFile = fopen(filepath, "w");
 	if(sqlFile == nullptr)
 	{
 		free(sqlFile);
@@ -61,5 +58,5 @@ const char * Database::getDatetime(char * buffer, const char * filename)
 void Database::registerVideo(Database * database, VInfos * vInfos)
 {
 	char buffer[500];
-	fprintf(database->sqlFile, "INSERT INTO `MR`(`RAt`, `Type`, `Duration`, `Infos`) VALUES(\"%s\", 1, %lf, \"%s %lf\");\n", this->getDatetime(buffer, vInfos->filename.c_str()), vInfos->duration, vInfos->codec.c_str(), vInfos->fps);
+	fprintf(database->sqlFile, "INSERT INTO `MR`(`RAt`, `Type`, `Duration`, `Infos`) VALUES(\"%s\", 1, %lf, \"%s %lf\");\n", this->getDatetime(buffer, vInfos->filename), vInfos->duration, vInfos->codec, vInfos->fps);
 }

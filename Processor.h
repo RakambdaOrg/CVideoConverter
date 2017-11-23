@@ -1,11 +1,7 @@
 #ifndef VIDEONORMALIZER_PROCESSOR_H
 #define VIDEONORMALIZER_PROCESSOR_H
 
-#include <string>
-#include <vector>
 #include "Database.h"
-
-using namespace std;
 
 class Processor
 {
@@ -30,21 +26,20 @@ public:
 	 * @param folderOutWindows The folder the batch file will put the outputs.
 	 * @param folderOutProcess The folder where to save the batch files.
 	 * @param folderBatWindows The folder where the BAT files are on windows.
-	 * @param folderBannedWindows
 	 */
-	Processor(Database * database, string &folderInProcess, string &folderInWindows, string &folderOutWindows, string &folderOutProcess, string &folderBatWindows, vector<string> &folderBannedWindows);
-	
+	Processor(Database * database, const char * folderInProcess, const char * folderInWindows, const char * folderOutWindows, const char * folderOutProcess, const char * folderBatWindows);
+
 	/**
 	 * Start this processor.
 	 */
 	void process();
 	
 	/**
-	 * Concatenate 2 strings into a new one.
-	 * @param s1 The first part of the string.
-	 * @param s2 The second part of the string.
-	 * @return The concatenated string. The user have the responsability to free it.
-	 */
+		 * Concatenate 2 strings into a new one.
+		 * @param s1 The first part of the string.
+		 * @param s2 The second part of the string.
+		 * @return The concatenated string. The user have the responsability to free it.
+		 */
 	static char * scat(const char * s1, const char * s2);
 
 private:
@@ -55,15 +50,14 @@ private:
 	 * @param time The duration to convert.
 	 * @return The parameter out with the data written.
 	 */
-	static string convertTime(int time);
+	static char * convertTime(char * out, int time);
 	
 	Database * database;
-	string folderInProcess;
-	string folderOutProcess;
-	string folderInWindows;
-	string folderOutWindows;
-	string folderBatWindows;
-	vector<string> folderBannedWindows;
+	const char * folderInProcess;
+	const char * folderOutProcess;
+	const char * folderInWindows;
+	const char * folderOutWindows;
+	const char * folderBatWindows;
 	
 	/**
 	 * Get the informations about a file.
@@ -71,32 +65,37 @@ private:
 	 * @param name The name of the file.
 	 * @return The file's infos.
 	 */
-	VInfos * getVInfos(string &filename, const string &name);
+	static VInfos * getVInfos(char * filename, const char * name);
 	
 	/**
 	 * Tell if a file is a system one based on its name and should be skipped.
 	 * @param filename The name of the file.
 	 * @return True if a system's file, false else.
 	 */
-	bool isSystemFile(string filename);
+	static bool isSystemFile(char * filename);
 	
 	/**
 	 * Tell if a file is a picture based on its name.
 	 * @param filename The name of the file.
 	 * @return True if a picture, false else.
 	 */
-	bool isPictureFile(string filename);
+	static bool isPictureFile(char * filename);
+	
+	/**
+	 * Transform a file's name with the mp4 extension.
+	 * @param filename The name of the file.
+	 * @return The new name. The user is responsible of freeing it.
+	 */
+	static char * asMP4(const char * filename);
 	
 	/**
 	 * Tell if a file should be skipped.
 	 * @param filename The name of the file.
 	 * @return True should be skipped, false else.
 	 */
-	bool shouldSkip(string filename);
+	bool shouldSkip(char * filename);
 	
-	bool fileExists(const string &name);
-	
-	bool ends_with(std::string const &value, std::string const &ending);
+	bool fileExists(const char * name);
 };
 
 #endif

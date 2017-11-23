@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include "VInfos.h"
 
-using namespace std;
-
 class Database
 {
 private:
@@ -49,7 +47,7 @@ public:
 	 * PostCond:
 	 *      Throws a IOException if the file cannot be opened.
 	 */
-	explicit Database(string filepath);
+	explicit Database(char * filepath);
 	
 	/**************************************************************
 	 * Close a database.
