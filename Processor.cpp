@@ -10,7 +10,6 @@ extern "C" {
 #include <libgen.h>
 #include "Processor.h"
 #include "NotUsedException.h"
-#include "VInfos.h"
 
 #define BUILD_BATCH true
 
@@ -57,7 +56,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 {
 	//Prepare structure
 	auto * vInfos = (VInfos *) malloc(sizeof(VInfos));
-	vInfos->codec = nullptr;
+	vInfos->codec = "UNKNOWN";
 	vInfos->fps = 0;
 	vInfos->duration = 0;
 	vInfos->filename = name;
@@ -121,7 +120,7 @@ bool Processor::isSystemFile(char * filename)
 bool Processor::shouldSkip(char * filename)
 {
 	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0;
+	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0;
 }
 
 bool Processor::isPictureFile(char * filename)
@@ -248,9 +247,9 @@ void Processor::process()
 				free(fileInWindows);
 			}
 		}
-		else
+		else if(vInfos->codec != nullptr)
 		{
-			if(vInfos->codec != nullptr && strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
+			if(strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
 			{
 			}
 			else if(vInfos->fps > 239)
