@@ -1,25 +1,48 @@
-#include <stdlib.h>
 #include <memory.h>
-#include <cstring>
 #include <cstdio>
-#include <cstdlib>
+#include <string>
+#include <iostream>
 #include "Database.h"
 #include "IOException.h"
 #include "NotUsedException.h"
+
+#define ENABLED_LOG 0
 
 Database::Database()
 {
 	throw NotUsedException();
 }
 
+void Database::setUseless(char * name)
+{
+	std::cout << "\t" << "Setting useless " << name;
+	int data = 0;
+	char * zErrMsg = nullptr;
+	sqlite3_exec(sqllite, (std::string("INSERT INTO Done(FilePath) VALUES('") + std::string(name) + std::string("');")).c_str(), callback, &data, &zErrMsg);
+}
+
 Database::Database(char * filepath)
 {
+#ifdef ENABLED_LOG
 	sqlFile = fopen(filepath, "w");
 	if(sqlFile == nullptr)
 	{
-		free(sqlFile);
+		fclose(sqlFile);
 		throw IOException();
 	}
+#endif
+	
+	if(sqlite3_open("db.db", &sqllite))
+	{
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(sqllite));
+		fclose(sqlFile);
+		throw IOException();
+	}
+	
+	char * zErrMsg = nullptr;
+	int data = 0;
+	sqlite3_exec(sqllite, "PRAGMA synchronous=ON", nullptr, nullptr, &zErrMsg);
+	sqlite3_exec(sqllite, "CREATE TABLE IF NOT EXISTS Done(FilePath VARCHAR(2048), PRIMARY KEY(FilePath));", callback, &data, &zErrMsg);
 	
 	fprintf(sqlFile, "CREATE TABLE IF NOT EXISTS `MR`(\n");
 	fprintf(sqlFile, "\tID INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n");
@@ -33,13 +56,18 @@ Database::Database(char * filepath)
 
 Database::~Database()
 {
+#ifdef ENABLED_LOG
 	fclose(sqlFile);
+#endif
+	sqlite3_close(sqllite);
 }
 
 void Database::registerPicture(Database * database, char * filename)
 {
+#ifdef ENABLED_LOG
 	char buffer[500];
 	fprintf(database->sqlFile, "INSERT INTO `MR`(`RAt`, `Type`) VALUES(\"%s\", 0);\n", getDatetime(buffer, filename));
+#endif
 }
 
 const char * Database::getDatetime(char * buffer, const char * filename)
@@ -57,6 +85,17 @@ const char * Database::getDatetime(char * buffer, const char * filename)
 
 void Database::registerVideo(Database * database, VInfos * vInfos)
 {
+#ifdef ENABLED_LOG
 	char buffer[500];
 	fprintf(database->sqlFile, "INSERT INTO `MR`(`RAt`, `Type`, `Duration`, `Infos`) VALUES(\"%s\", 1, %lf, \"%s %lf\");\n", this->getDatetime(buffer, vInfos->filename), vInfos->duration, vInfos->codec, vInfos->fps);
+#endif
+}
+
+bool Database::isUseless(char * string, bool * result)
+{
+	char * zErrMsg = nullptr;
+	int nrecs = 0;
+	std::string tmp = std::string("SELECT * FROM Done WHERE FilePath='") + std::string(string) + std::string("';");
+	*result = sqlite3_exec(sqllite, tmp.c_str(), select_callback, &nrecs, &zErrMsg) == SQLITE_OK && nrecs > 0;
+	return *result;
 }

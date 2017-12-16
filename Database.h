@@ -1,13 +1,15 @@
 #ifndef VIDEONORMALIZER_DATABASE_H
 #define VIDEONORMALIZER_DATABASE_H
 
-#include <stdio.h>
+#include <cstdio>
+#include <sqlite3.h>
 #include "VInfos.h"
 
 class Database
 {
 private:
 	FILE * sqlFile;
+	sqlite3 * sqllite;
 	
 	/**************************************************************
 	 * Get the date and time part of the filename.
@@ -22,8 +24,42 @@ private:
 	 * PostCond:
 	 */
 	const char * getDatetime(char * buffer, const char * filename);
-	
+
 public:
+	bool isUseless(char * string, bool * result);
+	
+	void setUseless(char * name);
+	
+	static int callback(void * NotUsed, int argc, char ** argv, char ** azColName)
+	{
+		return 0;
+	}
+	
+	static int select_callback(void * p_data, int num_fields, char ** p_fields, char ** p_col_names)
+	{
+		
+//		int i;
+//
+		int * nof_records = (int *) p_data;
+		(*nof_records)++;
+//
+//		printf("%d\n", *nof_records);
+//
+//		for(i = 0; i < num_fields; i++)
+//		{
+//			if(p_fields[i])
+//			{
+//				printf("----%20s", p_fields[i]);
+//			}
+//			else
+//			{
+//				printf("----%20s", " ");
+//			}
+//		}
+//		printf("\n");
+		return 0;
+	}
+	
 	/**************************************************************
 	 * Do not use.
 	 **************************************************************

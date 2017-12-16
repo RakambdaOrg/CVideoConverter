@@ -128,7 +128,7 @@ bool Processor::isPictureFile(char * filename)
 	char * dot = strrchr(filename, '.');
 	if(dot == nullptr)
 		return false;
-	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0;
+	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0 || strcmp(dot, ".gif") == 0;
 }
 
 char * Processor::asMP4(const char * filename)
@@ -192,15 +192,24 @@ void Processor::process()
 		if(shouldSkip(file->d_name))
 			continue;
 		
+		
 		//Get the informations about this video.
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
-		//std::cout << "Processing file " << filePath << std::endl;
+		bool useless = false;
+		database->isUseless(filePath, &useless);
+		if(useless)
+		{
+			//std::cout << "\t" << "U";
+			continue;
+		}
 		std::cout << "\t" << "o";
+		//std::cout << "Processing file " << filePath << std::endl;
 		VInfos * vInfos = getVInfos(filePath, file->d_name);
 		
 		if(vInfos->type == 'P' || isPictureFile(file->d_name))
 		{
 			database->registerPicture(database, file->d_name);
+			database->setUseless(filePath);
 			free(vInfos->outFilename);
 			free(vInfos);
 			continue;
@@ -251,9 +260,13 @@ void Processor::process()
 		{
 			if(strcmp(vInfos->codec, "hevc") == 0) //Ignore h265 as this is the result we want.
 			{
+				database->setUseless(filePath);
 			}
 			else if(vInfos->fps > 239)
-				std::cout << "\t" << "Skipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
+			{
+				std::cout << "S";
+				//std::cout << "\t" << "Skipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
+			}
 			else
 				std::cout << "\t" << "Skipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
 		}
