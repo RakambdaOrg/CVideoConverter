@@ -113,14 +113,13 @@ bool Processor::isSystemFile(char * filename)
 {
 	if(*filename == '.')
 		return true;
-	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0;
+	return false;
 }
 
 bool Processor::shouldSkip(char * filename)
 {
 	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0;
+	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0 || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0 || strcmp(dot, ".db") == 0;
 }
 
 bool Processor::isPictureFile(char * filename)
@@ -204,14 +203,17 @@ void Processor::process()
 		}
 		std::cout << "\t" << "o";
 		//std::cout << "Processing file " << filePath << std::endl;
-		VInfos * vInfos = getVInfos(filePath, file->d_name);
+		VInfos * vInfos = nullptr;
 		
-		if(vInfos->type == 'P' || isPictureFile(file->d_name))
+		if(isPictureFile(file->d_name) || (vInfos = getVInfos(filePath, file->d_name))->type == 'P')
 		{
 			database->registerPicture(database, file->d_name);
 			database->setUseless(filePath);
-			free(vInfos->outFilename);
-			free(vInfos);
+			if(vInfos != nullptr)
+			{
+				free(vInfos->outFilename);
+				free(vInfos);
+			}
 			continue;
 		}
 		
@@ -242,13 +244,17 @@ void Processor::process()
 						fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
 						fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
 						fclose(batFile);
-						std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
+						std::cout << "W";
+						//std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
 					}
 					else
 						std::cout << std::endl << "\tError writing file " << fileBatMac << std::endl;
 				}
 				else
-					std::cout << "\tFile " << fileBatMac << " already exists." << std::endl;
+				{
+					std::cout << "E";
+					//std::cout << "\tFile " << fileBatMac << " already exists." << std::endl;
+				}
 				//Clean the house.
 				free(fileBatMac);
 				free(fileBatWindows);
