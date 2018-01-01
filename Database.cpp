@@ -15,7 +15,8 @@ Database::Database()
 
 void Database::setUseless(char * name)
 {
-	std::cout << "\t" << "Setting useless " << name;
+	std::cout << "U";
+	//std::cout << "\t" << "Setting useless " << name;
 	int data = 0;
 	char * zErrMsg = nullptr;
 	sqlite3_exec(sqllite, (std::string("INSERT INTO Done(FilePath) VALUES('") + std::string(name) + std::string("');")).c_str(), callback, &data, &zErrMsg);
@@ -23,11 +24,10 @@ void Database::setUseless(char * name)
 
 Database::Database(char * filepath)
 {
-#ifdef ENABLED_LOG
+#if ENABLED_LOG
 	sqlFile = fopen(filepath, "w");
 	if(sqlFile == nullptr)
 	{
-		fclose(sqlFile);
 		throw IOException();
 	}
 #endif
@@ -43,7 +43,8 @@ Database::Database(char * filepath)
 	int data = 0;
 	sqlite3_exec(sqllite, "PRAGMA synchronous=ON", nullptr, nullptr, &zErrMsg);
 	sqlite3_exec(sqllite, "CREATE TABLE IF NOT EXISTS Done(FilePath VARCHAR(2048), PRIMARY KEY(FilePath));", callback, &data, &zErrMsg);
-	
+
+#if ENABLED_LOG
 	fprintf(sqlFile, "CREATE TABLE IF NOT EXISTS `MR`(\n");
 	fprintf(sqlFile, "\tID INT PRIMARY KEY NOT NULL AUTO_INCREMENT,\n");
 	fprintf(sqlFile, "\tRAt DATETIME NOT NULL,\n");
@@ -52,11 +53,12 @@ Database::Database(char * filepath)
 	fprintf(sqlFile, "\tInfos VARCHAR(50)\n");
 	fprintf(sqlFile, ");\n");
 	fprintf(sqlFile, "CREATE UNIQUE INDEX MR_ID_uindex ON MR (ID);\n\n");
+#endif
 }
 
 Database::~Database()
 {
-#ifdef ENABLED_LOG
+#if ENABLED_LOG
 	fclose(sqlFile);
 #endif
 	sqlite3_close(sqllite);
@@ -64,7 +66,7 @@ Database::~Database()
 
 void Database::registerPicture(Database * database, char * filename)
 {
-#ifdef ENABLED_LOG
+#if ENABLED_LOG
 	char buffer[500];
 	fprintf(database->sqlFile, "INSERT INTO `MR`(`RAt`, `Type`) VALUES(\"%s\", 0);\n", getDatetime(buffer, filename));
 #endif
@@ -85,7 +87,7 @@ const char * Database::getDatetime(char * buffer, const char * filename)
 
 void Database::registerVideo(Database * database, VInfos * vInfos)
 {
-#ifdef ENABLED_LOG
+#if ENABLED_LOG
 	char buffer[500];
 	fprintf(database->sqlFile, "INSERT INTO `MR`(`RAt`, `Type`, `Duration`, `Infos`) VALUES(\"%s\", 1, %lf, \"%s %lf\");\n", this->getDatetime(buffer, vInfos->filename), vInfos->duration, vInfos->codec, vInfos->fps);
 #endif
