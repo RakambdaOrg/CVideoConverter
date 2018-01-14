@@ -2,6 +2,7 @@
 #include "Processor.h"
 
 #define ***REMOVED*** 1
+#define CMD 0
 
 extern "C" {
 #include <libavformat/avformat.h>

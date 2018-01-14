@@ -225,8 +225,13 @@ void Processor::process()
 			{
 				//Prepare folders & filenames
 				char batFilename[200];
+#if CMD
+				const char * ext = "bat";
+#else
+				const char * ext = "ps1";
+#endif
 				char * ttt = strdup(folderInProcess);
-				sprintf(batFilename, "%s %s %s %s %f.bat", vInfos->stringDuration, basename(ttt), file->d_name, vInfos->codec, vInfos->fps);
+				sprintf(batFilename, "%s %s %s %s %f.%s", vInfos->stringDuration, basename(ttt), file->d_name, vInfos->codec, vInfos->fps, ext);
 				free(ttt);
 				char * fileInWindows = scat(folderInWindows, file->d_name);
 				char * fileOutWindows = scat(folderOutWindows, vInfos->outFilename);
@@ -238,11 +243,24 @@ void Processor::process()
 					FILE * batFile;
 					if((batFile = fopen(fileBatMac, "w")) != nullptr)
 					{
-						fprintf(batFile, "title %s\r\n", batFilename);
-						fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
-						fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
-						fprintf(batFile, "if exist \"%s\" call \"D:\\Documents\\Logiciels\\deleteJS.bat\" \"%s\"\r\n", fileOutWindows, fileInWindows);
-						fprintf(batFile, "if exist \"%s\" del \"%s\"\r\n", fileBatWindows, fileBatWindows);
+#if CMD
+						{
+							fprintf(batFile, "title %s\r\n", batFilename);
+							fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
+							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
+							fprintf(batFile, "if exist \"%s\" trash \"%s\"\r\n", fileOutWindows, fileInWindows);
+							fprintf(batFile, "if exist \"%s\" trash \"%s\"\r\n", fileBatWindows, fileBatWindows);
+						}
+#else
+						{
+							fprintf(batFile, "$host.ui.RawUI.WindowTitle = \"%s\"\r\n", batFilename);
+							fprintf(batFile, "if (!(Test-Path \"%s\")) {\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
+							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
+							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
+							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}", fileOutWindows, fileInWindows, fileInWindows);
+							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}", fileBatWindows, fileBatWindows, fileBatWindows);
+						}
+#endif
 						fclose(batFile);
 						std::cout << "W";
 						//std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
