@@ -254,7 +254,7 @@ void Processor::process()
 #else
 						{
 							fprintf(batFile, "$host.ui.RawUI.WindowTitle = \"%s\"\r\n", batFilename);
-							fprintf(batFile, "if (!(Test-Path \"%s\")) {\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
+							fprintf(batFile, "if (!(Test-Path \"%s\")) z{\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
 							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 28 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
 							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}", fileOutWindows, fileInWindows, fileInWindows);
