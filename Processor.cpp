@@ -109,11 +109,9 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 	return vInfos;
 }
 
-bool Processor::isSystemFile(char * filename)
+bool Processor::isSystemFile(const char * filename)
 {
-	if(*filename == '.')
-		return true;
-	return false;
+	return *filename == '.';
 }
 
 bool Processor::shouldSkip(char * filename)

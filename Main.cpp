@@ -1,42 +1,38 @@
 #include <cstdlib>
 #include "Processor.h"
 
-#define ***REMOVED*** 1
 #define CMD 0
 
 extern "C" {
 #include <libavformat/avformat.h>
 }
 
-int main()
+int main(int argc, char ** argv)
 {
+	if(argc != 4 && argc != 6)
+		exit(EXIT_FAILURE);
+	
 	//Register codecs
 	av_register_all();
 	avcodec_register_all();
 	
 	//Configure folders to set in the batch files
-	const char * folderInWindows = nullptr;
-	const char * folderOutWindows = nullptr;
-	const char * folderBatWindows = nullptr;
+	const char * folderInWindows = argv[1];
+	const char * folderOutWindows = argv[2];
+	const char * folderBatWindows = argv[3];
 	
 	//Configure the folders to build the batch files.
-	const char * folderInProcess = nullptr;
-	const char * folderOutProcess = nullptr;
-	
-	if(***REMOVED***) //***REMOVED***
+	const char * folderInProcess;
+	const char * folderOutProcess;
+	if(argc != 6)
 	{
-		folderInWindows = "***REMOVED***";
-		folderOutWindows = R"(***REMOVED***)";
-		folderBatWindows = R"(***REMOVED***)";
-		
-		//Configure the folders to build the batch files.
-		#ifdef _WIN32
-			folderInProcess = folderInWindows;
-			folderOutProcess = R("***REMOVED***");
-		#else
-			folderInProcess = "***REMOVED***";
-			folderOutProcess = "***REMOVED***";
-		#endif
+		folderInProcess = argv[1];
+		folderOutProcess = argv[3];
+	}
+	else
+	{
+		folderInProcess = argv[4];
+		folderOutProcess = argv[5];
 	}
 	
 	char * databasePath = Processor::scat(folderOutProcess, "stats.sql");

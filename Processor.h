@@ -72,7 +72,7 @@ private:
 	 * @param filename The name of the file.
 	 * @return True if a system's file, false else.
 	 */
-	static bool isSystemFile(char * filename);
+	static bool isSystemFile(const char * filename);
 	
 	/**
 	 * Tell if a file is a picture based on its name.
