@@ -117,7 +117,7 @@ bool Processor::isSystemFile(const char * filename)
 bool Processor::shouldSkip(char * filename)
 {
 	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0 || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0 || strcmp(dot, ".db") == 0 || strcmp(dot, ".dat") == 0 || strcmp(dot, ".rtf") == 0 || strcmp(dot, ".docx") == 0 || strcmp(dot, ".pdf") == 0;
+	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0 || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0 || strcmp(dot, ".db") == 0 || strcmp(dot, ".dat") == 0 || strcmp(dot, ".rtf") == 0 || strcmp(dot, ".docx") == 0 || strcmp(dot, ".pdf") == 0 || strcmp(dot, ".dropbox") == 0 || strcmp(dot, ".ds_store") == 0;
 }
 
 bool Processor::isPictureFile(char * filename)
@@ -125,7 +125,7 @@ bool Processor::isPictureFile(char * filename)
 	char * dot = strrchr(filename, '.');
 	if(dot == nullptr)
 		return false;
-	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0 || strcmp(dot, ".gif") == 0;
+	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0 || strcmp(dot, ".gif") == 0 || strcmp(dot, ".svg") == 0;
 }
 
 char * Processor::asMP4(const char * filename)
@@ -156,7 +156,7 @@ void Processor::process()
 	struct dirent * file;
 	while((file = readdir(dir)) != nullptr) //Loop through all the files
 	{
-		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0)
+		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0 || strcmp(file->d_name, "$RECYCLE.BIN") == 0)
 			continue;
 		
 		if(file->d_type == DT_DIR)
