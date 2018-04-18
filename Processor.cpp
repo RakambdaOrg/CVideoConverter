@@ -125,7 +125,7 @@ bool Processor::isPictureFile(char * filename)
 	char * dot = strrchr(filename, '.');
 	if(dot == nullptr)
 		return false;
-	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0 || strcmp(dot, ".gif") == 0 || strcmp(dot, ".svg") == 0;
+	return strcmp(dot, ".jpg") == 0 || strcmp(dot, ".png") == 0 || strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".JPG") == 0 || strcmp(dot, ".PNG") == 0 || strcmp(dot, ".gif") == 0 || strcmp(dot, ".svg") == 0 || strcmp(dot, ".tiff") == 0;
 }
 
 char * Processor::asMP4(const char * filename)
@@ -217,7 +217,7 @@ void Processor::process()
 		
 		database->registerVideo(database, vInfos);
 		
-		if((vInfos->fps > 0 && (vInfos->fps < 60 || vInfos->fps == 1000)) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if((vInfos->fps > 0 && (vInfos->fps <= 60 || vInfos->fps == 1000)) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 			{
@@ -253,10 +253,10 @@ void Processor::process()
 						{
 							fprintf(batFile, "$host.ui.RawUI.WindowTitle = \"%s\"\r\n", batFilename);
 							fprintf(batFile, "if (!(Test-Path \"%s\")){\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
-							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
+							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0:g \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
-							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}", fileOutWindows, fileInWindows, fileInWindows);
-							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}", fileBatWindows, fileBatWindows, fileBatWindows);
+							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}\r\n", fileOutWindows, fileInWindows, fileInWindows);
+							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}\r\n", fileBatWindows, fileBatWindows, fileBatWindows);
 						}
 #endif
 						fclose(batFile);
