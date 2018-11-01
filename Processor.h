@@ -32,7 +32,7 @@ public:
 	/**
 	 * Start this processor.
 	 */
-	void process();
+	int process();
 	
 	/**
 		 * Concatenate 2 strings into a new one.

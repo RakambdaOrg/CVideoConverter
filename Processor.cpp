@@ -7,9 +7,7 @@ extern "C" {
 #include <sys/stat.h>
 #include <dirent.h>
 #include <iostream>
-#include <libgen.h>
 #include "Processor.h"
-#include "NotUsedException.h"
 
 #define BUILD_BATCH true
 
@@ -142,8 +140,9 @@ char * Processor::asMP4(const char * filename)
 	return nFilename;
 }
 
-void Processor::process()
+int Processor::process()
 {
+	int newScripts = 0;
 	std::cout << std::endl << "Processing folder " << folderInWindows << std::endl;
 
 #ifndef _WIN32
@@ -174,7 +173,7 @@ void Processor::process()
 			free(temp);
 			
 			auto * processor = new Processor(database, nFolderInProcess, nFolderInWindows, nFolderOutWindows, folderOutProcess, folderBatWindows);
-			processor->process();
+			newScripts += processor->process();
 			delete processor;
 			
 			free(nFolderOutWindows);
@@ -261,6 +260,7 @@ void Processor::process()
 #endif
 						fclose(batFile);
 						std::cout << "W";
+						newScripts++;
 						//std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
 					}
 					else
@@ -297,4 +297,5 @@ void Processor::process()
 	}
 	
 	closedir(dir);
+	return newScripts;
 }

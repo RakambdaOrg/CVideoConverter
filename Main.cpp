@@ -1,10 +1,8 @@
-#include <cstdlib>
-#include "Processor.h"
+
 
 #define CMD 0
 
 extern "C" {
-#include <libavformat/avformat.h>
 }
 
 int main(int argc, char ** argv)
@@ -13,8 +11,8 @@ int main(int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	
 	//Register codecs
-	av_register_all();
-	avcodec_register_all();
+	//av_register_all();
+	//avcodec_register_all();
 	
 	//Configure folders to set in the batch files
 	const char * folderInWindows = argv[1];
@@ -40,7 +38,8 @@ int main(int argc, char ** argv)
 	free(databasePath);
 	
 	auto * processor = new Processor(database, folderInProcess, folderInWindows, folderOutWindows, folderOutProcess, folderBatWindows);
-	processor->process();
+	int scripts = processor->process();
+	std::cout << std::endl << "New scripts created: " << scripts;
 	
 	delete processor;
 	delete database;
