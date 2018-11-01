@@ -1,5 +1,9 @@
 
 
+#include <cstdlib>
+#include <iostream>
+#include "Processor.h"
+
 #define CMD 0
 
 extern "C" {
