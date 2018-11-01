@@ -1,12 +1,15 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "NotUsedException.h"
+
 extern "C" {
 #include <libavformat/avformat.h>
 }
 #include <sys/stat.h>
 #include <dirent.h>
 #include <iostream>
+#include <libgen.h>
 #include "Processor.h"
 
 #define BUILD_BATCH true
