@@ -6,11 +6,12 @@
 extern "C" {
 #include <libavformat/avformat.h>
 }
-#include <sys/stat.h>
 #include <dirent.h>
 #include <iostream>
 #include <libgen.h>
 #include "Processor.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define BUILD_BATCH true
 
@@ -148,7 +149,7 @@ int Processor::process()
 	int newScripts = 0;
 	std::cout << std::endl << "Processing folder " << folderInWindows << std::endl;
 
-#ifndef _WIN32
+#ifndef WIN32
 	mkdir(folderOutProcess, S_IRWXU);
 #endif
 	
@@ -158,10 +159,21 @@ int Processor::process()
 	struct dirent * file;
 	while((file = readdir(dir)) != nullptr) //Loop through all the files
 	{
+		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0 || strcmp(file->d_name, "$RECYCLE.BIN") == 0)
 			continue;
-		
-		if(file->d_type == DT_DIR)
+#ifdef WIN32
+		struct _stat fileInfos;
+		if(_stat(filePath, &fileInfos) < 0)
+#else
+		struct stat fileInfos;
+		if(stat(filePath, &fileInfos) < 0)
+#endif
+		{
+			std::cout << "\t" << "Error reading file infos for " << filePath;
+			continue;
+		}
+		if(S_ISREG(fileInfos.st_mode))
 		{
 			char * temp = scat(folderInWindows, file->d_name);
 			char * nFolderInWindows = scat(temp, "\\");
@@ -193,7 +205,6 @@ int Processor::process()
 		
 		
 		//Get the informations about this video.
-		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		bool useless = false;
 		database->isUseless(filePath, &useless);
 		if(useless)

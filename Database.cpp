@@ -1,7 +1,7 @@
 #include <memory.h>
 #include <cstdio>
-#include <string>
 #include <iostream>
+#include <cstring>
 #include "Database.h"
 #include "IOException.h"
 #include "NotUsedException.h"

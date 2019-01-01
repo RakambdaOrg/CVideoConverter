@@ -4,7 +4,8 @@ project(VideoNormalizer)
 set(CMAKE_CXX_STANDARD 14)
 
 IF (WIN32)
-    link_directories(D:\\Programmes\\MSYS2\\mingw64\\lib)
+    include_directories(D:\\Programmes\\MSYS2\\usr\\local\\include)
+    link_directories(D:\\Programmes\\MSYS2\\usr\\local\\lib)
 ELSE ()
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
@@ -14,7 +15,7 @@ set(SOURCE_FILES Main.cpp Database.cpp Database.h VInfos.h IOException.h Process
 add_executable(VideoNormalizer ${SOURCE_FILES})
 
 IF (WIN32)
-    target_link_libraries(VideoNormalizer libavutil libavformat libavcodec)
+    target_link_libraries(VideoNormalizer libavutil libavformat libavcodec sqlite3)
 ELSE ()
     target_link_libraries(VideoNormalizer avutil avformat avcodec sqlite3)
 ENDIF ()
