@@ -158,6 +158,8 @@ int Processor::process()
 	DIR * dir = opendir(folderInProcess);
 	struct dirent * file;
 	while((file = readdir(dir)) != nullptr) //Loop through all the files
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
 	{
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0 || strcmp(file->d_name, "$RECYCLE.BIN") == 0)
@@ -268,12 +270,16 @@ int Processor::process()
 							fprintf(batFile, "if (!(Test-Path \"%s\")){\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
 							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0 -map_metadata:s:v 0:s:v -map_metadata:s:a 0:s:a \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
-							fprintf(batFile, "if (Test-Path \"%s\") {", fileOutWindows);
-							fprintf(batFile, "$FileDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
-							fprintf(batFile, "Get-ChildItem  \"%s\" | %% {$_.CreationTime = '01/11/2005 06:00:36'}\r\n", fileOutWindows);
-							fprintf(batFile, "\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"", fileInWindows, fileInWindows);
-							fprintf(batFile, "\r\n}\r\n");
-							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}\r\n", fileBatWindows, fileBatWindows, fileBatWindows);
+							fprintf(batFile, "if (Test-Path \"%s\") {\r\n", fileOutWindows);
+							fprintf(batFile, "\t$FileDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
+							fprintf(batFile, "\tGet-ChildItem  \"%s\" | ForEach-Object {$_.CreationTime = $FileDate}\r\n", fileOutWindows);
+							fprintf(batFile, "\t[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\n", fileInWindows);
+							fprintf(batFile, "\tWrite-Output \"Deleted %s\"\r\n", fileInWindows);
+							fprintf(batFile, "}\r\n");
+							fprintf(batFile, "if (Test-Path \"%s\") {\r\n", fileBatWindows);
+							fprintf(batFile, "\t[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\n", fileBatWindows);
+							fprintf(batFile, "\tWrite-Output \"Deleted %s\"\r\n", fileBatWindows);
+							fprintf(batFile, "}\r\n");
 						}
 #endif
 						fclose(batFile);
@@ -304,8 +310,8 @@ int Processor::process()
 			}
 			else if(vInfos->fps > 239)
 			{
-				std::cout << "S";
-				//std::cout << "\t" << "Skipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
+				//std::cout << "S";
+				std::cout << "\t" << "Skipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
 			}
 			else
 				std::cout << "\t" << "Skipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
@@ -313,6 +319,7 @@ int Processor::process()
 		free(vInfos->outFilename);
 		free(vInfos);
 	}
+#pragma clang diagnostic pop
 	
 	closedir(dir);
 	return newScripts;
