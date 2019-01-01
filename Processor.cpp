@@ -245,7 +245,7 @@ void Processor::process()
 						{
 							fprintf(batFile, "title %s\r\n", batFilename);
 							fprintf(batFile, "mkdir \"%s\"\r\n", folderOutWindows);
-							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k \"%s\"\r\n", fileInWindows, fileOutWindows);
+							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0 -map_metadata:s:v 0:s:v -map_metadata:s:a 0:s:a \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "if exist \"%s\" trash \"%s\"\r\n", fileOutWindows, fileInWindows);
 							fprintf(batFile, "if exist \"%s\" trash \"%s\"\r\n", fileBatWindows, fileBatWindows);
 						}
@@ -253,9 +253,13 @@ void Processor::process()
 						{
 							fprintf(batFile, "$host.ui.RawUI.WindowTitle = \"%s\"\r\n", batFilename);
 							fprintf(batFile, "if (!(Test-Path \"%s\")){\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
-							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0:g \"%s\"\r\n", fileInWindows, fileOutWindows);
+							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0 -map_metadata:s:v 0:s:v -map_metadata:s:a 0:s:a \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
-							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}\r\n", fileOutWindows, fileInWindows, fileInWindows);
+							fprintf(batFile, "if (Test-Path \"%s\") {", fileOutWindows);
+							fprintf(batFile, "$FileDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
+							fprintf(batFile, "Get-ChildItem  \"%s\" | %% {$_.CreationTime = '01/11/2005 06:00:36'}\r\n", fileOutWindows);
+							fprintf(batFile, "\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"", fileInWindows, fileInWindows);
+							fprintf_s(batFile, "\r\n}\r\n");
 							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}\r\n", fileBatWindows, fileBatWindows, fileBatWindows);
 						}
 #endif
