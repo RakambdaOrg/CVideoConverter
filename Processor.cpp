@@ -167,15 +167,16 @@ int Processor::process()
 #ifdef WIN32
 		struct _stat fileInfos;
 		if(_stat(filePath, &fileInfos) < 0)
-#else
-		struct stat fileInfos;
-		if(stat(filePath, &fileInfos) < 0)
-#endif
 		{
 			std::cout << "\t" << "Error reading file infos for " << filePath;
 			continue;
 		}
-		if(S_ISREG(fileInfos.st_mode))
+		bool isDir = S_ISDIR(fileInfo.st_mode);
+#else
+		bool isDir = (file->d_type == DT_DIR);
+#endif
+		
+		if(isDir)
 		{
 			char * temp = scat(folderInWindows, file->d_name);
 			char * nFolderInWindows = scat(temp, "\\");
@@ -267,12 +268,16 @@ int Processor::process()
 #else
 						{
 							fprintf(batFile, "$host.ui.RawUI.WindowTitle = \"%s\"\r\n", batFilename);
-							fprintf(batFile, "if (!(Test-Path \"%s\")){\r\nmkdir \"%s\"\r\n}\r\n", folderOutWindows, folderOutWindows);
+							fprintf(batFile, "if (!(Test-Path \"%s\")){\r\n", folderOutWindows);
+							fprintf(batFile, "\tmkdir \"%s\"\r\n", folderOutWindows);
+							fprintf(batFile, "}\r\n");
 							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0 -map_metadata:s:v 0:s:v -map_metadata:s:a 0:s:a \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
 							fprintf(batFile, "if (Test-Path \"%s\") {\r\n", fileOutWindows);
-							fprintf(batFile, "\t$FileDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
-							fprintf(batFile, "\tGet-ChildItem  \"%s\" | ForEach-Object {$_.CreationTime = $FileDate}\r\n", fileOutWindows);
+							fprintf(batFile, "\t$FileCreationDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
+							fprintf(batFile, "\t$FileAccessDate = (Get-ChildItem \"%s\").LastAccessTime\r\n", fileInWindows);
+							fprintf(batFile, "\tGet-ChildItem  \"%s\" | ForEach-Object {$_.CreationTime = $FileCreationDate}\r\n", fileOutWindows);
+							fprintf(batFile, "\tGet-ChildItem  \"%s\" | ForEach-Object {$_.LastAccessTime = $FileAccessDate}\r\n", fileOutWindows);
 							fprintf(batFile, "\t[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\n", fileInWindows);
 							fprintf(batFile, "\tWrite-Output \"Deleted %s\"\r\n", fileInWindows);
 							fprintf(batFile, "}\r\n");
