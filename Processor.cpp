@@ -171,7 +171,7 @@ int Processor::process()
 			std::cout << "\t" << "Error reading file infos for " << filePath;
 			continue;
 		}
-		bool isDir = S_ISDIR(fileInfo.st_mode);
+		bool isDir = S_ISDIR(fileInfos.st_mode);
 #else
 		bool isDir = (file->d_type == DT_DIR);
 #endif
