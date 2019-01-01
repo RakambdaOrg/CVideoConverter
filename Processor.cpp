@@ -261,7 +261,7 @@ int Processor::process()
 							fprintf(batFile, "$FileDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
 							fprintf(batFile, "Get-ChildItem  \"%s\" | %% {$_.CreationTime = '01/11/2005 06:00:36'}\r\n", fileOutWindows);
 							fprintf(batFile, "\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"", fileInWindows, fileInWindows);
-							fprintf_s(batFile, "\r\n}\r\n");
+							fprintf(batFile, "\r\n}\r\n");
 							fprintf(batFile, "if (Test-Path \"%s\") {\r\n[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s','OnlyErrorDialogs','SendToRecycleBin')\r\necho \"Deleted %s\"\r\n}\r\n", fileBatWindows, fileBatWindows, fileBatWindows);
 						}
 #endif
