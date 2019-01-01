@@ -118,7 +118,7 @@ bool Processor::isSystemFile(const char * filename)
 bool Processor::shouldSkip(char * filename)
 {
 	char * dot = strrchr(filename, '.');
-	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0 || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0 || strcmp(dot, ".db") == 0 || strcmp(dot, ".dat") == 0 || strcmp(dot, ".rtf") == 0 || strcmp(dot, ".docx") == 0 || strcmp(dot, ".pdf") == 0 || strcmp(dot, ".dropbox") == 0 || strcmp(dot, ".ds_store") == 0 || strcmp(dot, ".js") == 0;
+	return dot == nullptr || strcmp(dot, ".loc") == 0 || strcmp(dot, ".msg") == 0 || strcmp(dot, ".pbf") == 0 || strcmp(dot, ".prproj") == 0 || strcmp(dot, ".aep") == 0 || strcmp(dot, ".ini") == 0 || strcmp(dot, ".txt") == 0 || strcmp(dot, ".db") == 0 || strcmp(dot, ".dat") == 0 || strcmp(dot, ".rtf") == 0 || strcmp(dot, ".docx") == 0 || strcmp(dot, ".pdf") == 0 || strcmp(dot, ".dropbox") == 0 || strcmp(dot, ".ds_store") == 0 || strcmp(dot, ".js") == 0 || strcmp(dot, ".xlsm") == 0;
 }
 
 bool Processor::isPictureFile(char * filename)
