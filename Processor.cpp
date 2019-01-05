@@ -271,7 +271,8 @@ int Processor::process()
 							fprintf(batFile, "if (!(Test-Path \"%s\")){\r\n", folderOutWindows);
 							fprintf(batFile, "\tmkdir \"%s\"\r\n", folderOutWindows);
 							fprintf(batFile, "}\r\n");
-							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0 -map_metadata:s:v 0:s:v -map_metadata:s:a 0:s:a \"%s\"\r\n", fileInWindows, fileOutWindows);
+							//fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -map_metadata 0 -map_metadata:s:v 0:s:v -map_metadata:s:a 0:s:a \"%s\"\r\n", fileInWindows, fileOutWindows);
+							fprintf(batFile, "ffmpeg -n -i \"%s\" -c:v libx265 -preset medium -crf 23 -c:a aac -b:a 128k -movflags use_metadata_tags -map_metadata 0 \"%s\"\r\n", fileInWindows, fileOutWindows);
 							fprintf(batFile, "Add-Type -AssemblyName Microsoft.VisualBasic\r\n");
 							fprintf(batFile, "if (Test-Path \"%s\") {\r\n", fileOutWindows);
 							fprintf(batFile, "\t$FileCreationDate = (Get-ChildItem \"%s\").CreationTime\r\n", fileInWindows);
