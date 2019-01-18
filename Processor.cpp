@@ -233,7 +233,7 @@ int Processor::process()
 		
 		database->registerVideo(database, vInfos);
 		
-		if((vInfos->fps > 0 && (vInfos->fps <= 60 || vInfos->fps == 1000)) && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if(vInfos->fps > 0 && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 			{
@@ -314,13 +314,10 @@ int Processor::process()
 			{
 				database->setUseless(filePath);
 			}
-			else if(vInfos->fps > 239)
-			{
-				//std::cout << "S";
-				std::cout << "\t" << "Skipped slowmotion (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
-			}
 			else
-				std::cout << "\t" << "Skipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
+			{
+				std::cout << "Skipped file (" << vInfos->codec << "," << vInfos->fps << "," << vInfos->stringDuration << "," << vInfos->type << "):" << vInfos->filename;
+			}
 		}
 		free(vInfos->outFilename);
 		free(vInfos);
