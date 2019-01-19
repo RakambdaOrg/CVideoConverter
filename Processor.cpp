@@ -1,17 +1,16 @@
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
+#include <iostream>
+#include <libgen.h>
+#include <sys/stat.h>
 
 #include "NotUsedException.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
 }
-#include <dirent.h>
-#include <iostream>
-#include <libgen.h>
 #include "Processor.h"
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #define BUILD_BATCH true
 
@@ -155,12 +154,24 @@ int Processor::process()
 	
 	char filePath[512];
 	
-	DIR * dir = opendir(folderInProcess);
-	struct dirent * file;
-	while((file = readdir(dir)) != nullptr) //Loop through all the files
+	struct dirent ** namelist;
+	int namelistSize;
+	int currentIndex = 0;
+	
+	namelistSize = scandir(folderInProcess, &namelist, 0, alphasort);
+	
+	if(namelistSize < 0)
+	{
+		std::cout << "Error scanning directory " << folderInProcess << std::endl;
+		return 0;
+	}
+	
+	while(currentIndex < namelistSize) //Loop through all the files
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
 	{
+		dirent * file = namelist[currentIndex];
+		currentIndex += 1;
 		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
 		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0 || strcmp(file->d_name, "$RECYCLE.BIN") == 0)
 			continue;
@@ -324,6 +335,5 @@ int Processor::process()
 	}
 #pragma clang diagnostic pop
 	
-	closedir(dir);
 	return newScripts;
 }
