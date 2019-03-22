@@ -1,7 +1,9 @@
 #ifndef VIDEONORMALIZER_NOTUSEDEXCEPTION_H
 #define VIDEONORMALIZER_NOTUSEDEXCEPTION_H
 
-class NotUsedException
+#include <exception>
+
+class NotUsedException : std::exception
 {
 };
 

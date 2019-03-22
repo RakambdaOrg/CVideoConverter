@@ -93,9 +93,9 @@ private:
 	 * @param filename The name of the file.
 	 * @return True should be skipped, false else.
 	 */
-	bool shouldSkip(char * filename);
+	static bool shouldSkip(char * filename);
 	
-	bool fileExists(const char * name);
+	static bool fileExists(const char * name);
 };
 
 #endif
