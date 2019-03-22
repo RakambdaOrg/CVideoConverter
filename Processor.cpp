@@ -157,8 +157,13 @@ int Processor::process()
 	struct dirent ** namelist;
 	int namelistSize;
 	int currentIndex = 0;
-	
+
+#ifdef WIN32
+	printf("Need to find an alternative to scandir for windows");
+	exit(1);
+#else
 	namelistSize = scandir(folderInProcess, &namelist, 0, alphasort);
+#endif
 	
 	if(namelistSize < 0)
 	{
