@@ -17,7 +17,6 @@ extern "C" {
 #include <windows.h>
 #include <fileapi.h>
 
-#define alphasort nullptr
 #endif
 
 #define BUILD_BATCH true
@@ -379,11 +378,21 @@ int Processor::getFiles(const char * dirp, fileinfo *** namelist)
 	
 	return size;
 #else
-	struct dirent ** namelist = nullptr;
-	int size = scandir(dirp, namelist, nullptr, alphasort);
+	struct dirent ** dirents = nullptr;
+	int size = scandir(dirp, &dirents, nullptr, alphasort);
+	*namelist = (fileinfo **) malloc(sizeof(fileinfo *) * size);
 	
-	bool isDir = (file->d_type == DT_DIR);
-	//TODO: convert structs
+	for(int i = 0; i < size; i++)
+	{
+		(*namelist)[i] = (fileinfo *) malloc(sizeof(fileinfo));
+		dirent * file = dirents[i];
+		
+		strcpy((*namelist)[i]->name, file->d_name);
+		(*namelist)[i]->isDirectory = file->d_type == DT_DIR;
+		
+		free(file);
+	}
+	free(dirents);
 	
 	return size;
 #endif
