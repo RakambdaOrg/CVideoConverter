@@ -4,6 +4,7 @@
 #include <iostream>
 #include <libgen.h>
 #include <sys/stat.h>
+#include <lzma.h>
 
 #include "NotUsedException.h"
 
@@ -12,10 +13,18 @@ extern "C" {
 }
 #include "Processor.h"
 
+#ifdef WIN32
+#include <windows.h>
+#include <fileapi.h>
+
+#define alphasort nullptr
+#endif
+
 #define BUILD_BATCH true
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cppcoreguidelines-pro-type-member-init"
+
 Processor::Processor()
 {
 	throw NotUsedException();
@@ -158,16 +167,11 @@ int Processor::process()
 	
 	char filePath[512];
 	
-	struct dirent ** namelist;
-	int namelistSize;
+	fileinfo ** namelist = nullptr;
+	int namelistSize = 0;
 	int currentIndex = 0;
-
-#ifdef WIN32
-	printf("Need to find an alternative to scandir for windows");
-	exit(1);
-#else
-	namelistSize = scandir(folderInProcess, &namelist, nullptr, alphasort);
-#endif
+	
+	namelistSize = getFiles(folderInProcess, &namelist);
 	
 	if(namelistSize < 0)
 	{
@@ -179,34 +183,23 @@ int Processor::process()
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
 	{
-		dirent * file = namelist[currentIndex];
+		fileinfo * file = namelist[currentIndex];
 		currentIndex += 1;
-		sprintf(filePath, "%s/%s", folderInProcess, file->d_name);
-		if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0 || strcmp(file->d_name, "$RECYCLE.BIN") == 0)
+		sprintf(filePath, "%s/%s", folderInProcess, file->name);
+		if(strcmp(file->name, ".") == 0 || strcmp(file->name, "..") == 0 || strcmp(file->name, "$RECYCLE.BIN") == 0)
 			continue;
-#ifdef WIN32
-		struct _stat fileInfos;
-		if(_stat(filePath, &fileInfos) < 0)
-		{
-			std::cout << "\t" << "Error reading file infos for " << filePath;
-			continue;
-		}
-		bool isDir = S_ISDIR(fileInfos.st_mode);
-#else
-		bool isDir = (file->d_type == DT_DIR);
-#endif
 		
-		if(isDir)
+		if(file->isDirectory)
 		{
-			char * temp = scat(folderInWindows, file->d_name);
+			char * temp = scat(folderInWindows, file->name);
 			char * nFolderInWindows = scat(temp, "\\");
 			free(temp);
 			
-			temp = scat(folderOutWindows, file->d_name);
+			temp = scat(folderOutWindows, file->name);
 			char * nFolderOutWindows = scat(temp, "\\");
 			free(temp);
 			
-			temp = scat(folderInProcess, file->d_name);
+			temp = scat(folderInProcess, file->name);
 			char * nFolderInProcess = scat(temp, "/");
 			free(temp);
 			
@@ -220,10 +213,10 @@ int Processor::process()
 		}
 		
 		//Continue only if we should.
-		if(isSystemFile(file->d_name))
+		if(isSystemFile(file->name))
 			continue;
 		
-		if(shouldSkip(file->d_name))
+		if(shouldSkip(file->name))
 			continue;
 		
 		
@@ -239,9 +232,9 @@ int Processor::process()
 		//std::cout << "Processing file " << filePath << std::endl;
 		VInfos * vInfos = nullptr;
 		
-		if(isPictureFile(file->d_name) || (vInfos = getVInfos(filePath, file->d_name))->type == 'P')
+		if(isPictureFile(file->name) || (vInfos = getVInfos(filePath, file->name))->type == 'P')
 		{
-			database->registerPicture(database, file->d_name);
+			database->registerPicture(database, file->name);
 			database->setUseless(filePath);
 			if(vInfos != nullptr)
 			{
@@ -265,9 +258,9 @@ int Processor::process()
 				const char * ext = "ps1";
 #endif
 				char * ttt = strdup(folderInProcess);
-				sprintf(batFilename, "%s %s %s %s %f.%s", vInfos->stringDuration, basename(ttt), file->d_name, vInfos->codec, vInfos->fps, ext);
+				sprintf(batFilename, "%s %s %s %s %f.%s", vInfos->stringDuration, basename(ttt), file->name, vInfos->codec, vInfos->fps, ext);
 				free(ttt);
-				char * fileInWindows = scat(folderInWindows, file->d_name);
+				char * fileInWindows = scat(folderInWindows, file->name);
 				char * fileOutWindows = scat(folderOutWindows, vInfos->outFilename);
 				char * fileBatWindows = scat(folderBatWindows, batFilename);
 				char * fileBatMac = scat(folderOutProcess, batFilename);
@@ -342,7 +335,56 @@ int Processor::process()
 		free(vInfos->outFilename);
 		free(vInfos);
 	}
+	for(int i = 0; i < namelistSize; i++)
+	{
+		free(namelist[i]);
+	}
+	
+	free(namelist);
 #pragma clang diagnostic pop
 	
 	return newScripts;
+}
+
+int Processor::getFiles(const char * dirp, fileinfo *** namelist)
+{
+#ifdef WIN32
+	WIN32_FIND_DATA fdFile;
+	HANDLE hFind = nullptr;
+	
+	char sPath[2048];
+	
+	//Specify a file mask. *.* = We want everything!
+	wsprintf(sPath, "%s\\*.*", dirp);
+	if((hFind = FindFirstFile(sPath, &fdFile)) == INVALID_HANDLE_VALUE)
+	{
+		return 0;
+	}
+	
+	int size = 0;
+	do
+	{
+		if(strcmp(fdFile.cFileName, ".") != 0 && strcmp(fdFile.cFileName, "..") != 0)
+		{
+			size++;
+			*namelist = (fileinfo **) realloc(*namelist, sizeof(fileinfo *) * size);
+			(*namelist)[size - 1] = (fileinfo *) malloc(sizeof(fileinfo));
+			
+			strcpy((*namelist)[size - 1]->name, fdFile.cFileName);
+			(*namelist)[size - 1]->isDirectory = fdFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+		}
+	} while(FindNextFile(hFind, &fdFile));
+	
+	FindClose(hFind);
+	
+	return size;
+#else
+	struct dirent ** namelist = nullptr;
+	int size = scandir(dirp, namelist, nullptr, alphasort);
+	
+	bool isDir = (file->d_type == DT_DIR);
+	//TODO: convert structs
+	
+	return size;
+#endif
 }

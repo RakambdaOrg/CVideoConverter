@@ -3,6 +3,12 @@
 
 #include "Database.h"
 
+typedef struct _fileinfo
+{
+	char name[260];
+	bool isDirectory;
+} fileinfo;
+
 class Processor
 {
 public:
@@ -28,7 +34,7 @@ public:
 	 * @param folderBatWindows The folder where the BAT files are on windows.
 	 */
 	Processor(Database * database, const char * folderInProcess, const char * folderInWindows, const char * folderOutWindows, const char * folderOutProcess, const char * folderBatWindows);
-
+	
 	/**
 	 * Start this processor.
 	 */
@@ -96,6 +102,8 @@ private:
 	static bool shouldSkip(char * filename);
 	
 	static bool fileExists(const char * name);
+	
+	static int getFiles(const char * dirp, fileinfo *** namelist);
 };
 
 #endif
