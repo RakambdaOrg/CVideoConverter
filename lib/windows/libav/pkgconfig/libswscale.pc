@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libswscale
+Description: Libav image rescaling library
+Version: 5.0.0
+Requires: 
+Requires.private: libavutil >= 56.7.0
+Conflicts:
+Libs: -L${libdir} -lswscale 
+Libs.private: -lm
+Cflags: -I${includedir}

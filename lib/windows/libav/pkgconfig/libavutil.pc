@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libavutil
+Description: Libav utility library
+Version: 56.7.0
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir} -lavutil 
+Libs.private: -lm -lmfx -lstdc++ -luser32 -ladvapi32
+Cflags: -I${includedir}

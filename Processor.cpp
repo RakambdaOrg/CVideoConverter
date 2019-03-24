@@ -77,48 +77,49 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 	vInfos->type = 'U';
 	convertTime(vInfos->stringDuration, (int) vInfos->duration);
 	
-	//Open file.
-	//	AVFormatContext * pFormatCtx = avformat_alloc_context();
-	//	int errorID = avformat_open_input(&pFormatCtx, filename, nullptr, nullptr);
-	//
-	//	if(errorID < 0 || pFormatCtx->nb_streams == 0) //If an error happened when reading the file.
-	//	{
-	//		char * errorStr;
-	//		errorStr = (char *) malloc(100 * sizeof(char));
-	//		if(errorStr == nullptr)
-	//			return vInfos;
-	//		av_strerror(errorID, errorStr, 100);
-	//		printf("ERROR: %s\n", errorStr);
-	//		free(errorStr);
-	//	}
-	//	else
-	//	{
-	//		vInfos->type = 'P';
-	//		if(avformat_find_stream_info(pFormatCtx, nullptr) < 0)
-	//			return vInfos; // Couldn't find stream information
-	//
-	//		vInfos->duration = pFormatCtx->duration / ((double) AV_TIME_BASE);
-	//		convertTime(vInfos->stringDuration, (int) vInfos->duration);
-	//
-	//		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) //For each available stream.
-	//		{
-	//			AVStream * stream = pFormatCtx->streams[i];
-	//			AVCodecParameters * codecParameters = stream->codecpar;
-	//			enum AVCodecID codecID = codecParameters->codec_id;
-	//			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
-	//			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
-	//			{
-	//				vInfos->type = 'V';
-	//				vInfos->codec = codecDescriptor->name;
-	//
-	//				AVRational r = stream->avg_frame_rate;
-	//				vInfos->fps = ((double) r.num) / r.den;
-	//				break;
-	//			}
-	//		}
-	//		avformat_close_input(&pFormatCtx);
-	//		avformat_free_context(pFormatCtx);
-	//	}
+#ifndef WIN32
+	AVFormatContext * pFormatCtx = avformat_alloc_context();
+	int errorID = avformat_open_input(&pFormatCtx, filename, nullptr, nullptr);
+	
+	if(errorID < 0 || pFormatCtx->nb_streams == 0) //If an error happened when reading the file.
+	{
+		char * errorStr;
+		errorStr = (char *) malloc(100 * sizeof(char));
+		if(errorStr == nullptr)
+			return vInfos;
+		av_strerror(errorID, errorStr, 100);
+		printf("ERROR: %s\n", errorStr);
+		free(errorStr);
+	}
+	else
+	{
+		vInfos->type = 'P';
+		if(avformat_find_stream_info(pFormatCtx, nullptr) < 0)
+			return vInfos; // Couldn't find stream information
+		
+		vInfos->duration = pFormatCtx->duration / ((double) AV_TIME_BASE);
+		convertTime(vInfos->stringDuration, (int) vInfos->duration);
+		
+		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) //For each available stream.
+		{
+			AVStream * stream = pFormatCtx->streams[i];
+			AVCodecParameters * codecParameters = stream->codecpar;
+			enum AVCodecID codecID = codecParameters->codec_id;
+			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
+			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
+			{
+				vInfos->type = 'V';
+				vInfos->codec = codecDescriptor->name;
+				
+				AVRational r = stream->avg_frame_rate;
+				vInfos->fps = ((double) r.num) / r.den;
+				break;
+			}
+		}
+		avformat_close_input(&pFormatCtx);
+		avformat_free_context(pFormatCtx);
+	}
+#endif
 	return vInfos;
 }
 
