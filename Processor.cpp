@@ -4,7 +4,6 @@
 #include <iostream>
 #include <libgen.h>
 #include <sys/stat.h>
-#include <lzma.h>
 
 #include "NotUsedException.h"
 
@@ -20,6 +19,7 @@ extern "C" {
 #endif
 
 #define BUILD_BATCH true
+#define CMD 0
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cppcoreguidelines-pro-type-member-init"
@@ -78,47 +78,47 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 	convertTime(vInfos->stringDuration, (int) vInfos->duration);
 	
 	//Open file.
-	AVFormatContext * pFormatCtx = avformat_alloc_context();
-	int errorID = avformat_open_input(&pFormatCtx, filename, nullptr, nullptr);
-	
-	if(errorID < 0 || pFormatCtx->nb_streams == 0) //If an error happened when reading the file.
-	{
-		char * errorStr;
-		errorStr = (char *) malloc(100 * sizeof(char));
-		if(errorStr == nullptr)
-			return vInfos;
-		av_strerror(errorID, errorStr, 100);
-		printf("ERROR: %s\n", errorStr);
-		free(errorStr);
-	}
-	else
-	{
-		vInfos->type = 'P';
-		if(avformat_find_stream_info(pFormatCtx, nullptr) < 0)
-			return vInfos; // Couldn't find stream information
-		
-		vInfos->duration = pFormatCtx->duration / ((double) AV_TIME_BASE);
-		convertTime(vInfos->stringDuration, (int) vInfos->duration);
-		
-		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) //For each available stream.
-		{
-			AVStream * stream = pFormatCtx->streams[i];
-			AVCodecParameters * codecParameters = stream->codecpar;
-			enum AVCodecID codecID = codecParameters->codec_id;
-			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
-			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
-			{
-				vInfos->type = 'V';
-				vInfos->codec = codecDescriptor->name;
-				
-				AVRational r = stream->avg_frame_rate;
-				vInfos->fps = ((double) r.num) / r.den;
-				break;
-			}
-		}
-		avformat_close_input(&pFormatCtx);
-		avformat_free_context(pFormatCtx);
-	}
+	//	AVFormatContext * pFormatCtx = avformat_alloc_context();
+	//	int errorID = avformat_open_input(&pFormatCtx, filename, nullptr, nullptr);
+	//
+	//	if(errorID < 0 || pFormatCtx->nb_streams == 0) //If an error happened when reading the file.
+	//	{
+	//		char * errorStr;
+	//		errorStr = (char *) malloc(100 * sizeof(char));
+	//		if(errorStr == nullptr)
+	//			return vInfos;
+	//		av_strerror(errorID, errorStr, 100);
+	//		printf("ERROR: %s\n", errorStr);
+	//		free(errorStr);
+	//	}
+	//	else
+	//	{
+	//		vInfos->type = 'P';
+	//		if(avformat_find_stream_info(pFormatCtx, nullptr) < 0)
+	//			return vInfos; // Couldn't find stream information
+	//
+	//		vInfos->duration = pFormatCtx->duration / ((double) AV_TIME_BASE);
+	//		convertTime(vInfos->stringDuration, (int) vInfos->duration);
+	//
+	//		for(unsigned int i = 0; i < pFormatCtx->nb_streams; i++) //For each available stream.
+	//		{
+	//			AVStream * stream = pFormatCtx->streams[i];
+	//			AVCodecParameters * codecParameters = stream->codecpar;
+	//			enum AVCodecID codecID = codecParameters->codec_id;
+	//			const AVCodecDescriptor * codecDescriptor = avcodec_descriptor_get(codecID);
+	//			if(codecDescriptor->type == AVMEDIA_TYPE_VIDEO) //If this is a video stream.
+	//			{
+	//				vInfos->type = 'V';
+	//				vInfos->codec = codecDescriptor->name;
+	//
+	//				AVRational r = stream->avg_frame_rate;
+	//				vInfos->fps = ((double) r.num) / r.den;
+	//				break;
+	//			}
+	//		}
+	//		avformat_close_input(&pFormatCtx);
+	//		avformat_free_context(pFormatCtx);
+	//	}
 	return vInfos;
 }
 
@@ -160,7 +160,9 @@ int Processor::process()
 	int newScripts = 0;
 	std::cout << std::endl << "Processing folder " << folderInWindows << std::endl;
 
-#ifndef WIN32
+#ifdef WIN32
+	CreateDirectory(folderOutProcess, nullptr);
+#else
 	mkdir(folderOutProcess, S_IRWXU);
 #endif
 	
@@ -348,19 +350,18 @@ int Processor::process()
 int Processor::getFiles(const char * dirp, fileinfo *** namelist)
 {
 #ifdef WIN32
+	int size = 0;
 	WIN32_FIND_DATA fdFile;
 	HANDLE hFind = nullptr;
 	
 	char sPath[2048];
 	
-	//Specify a file mask. *.* = We want everything!
 	wsprintf(sPath, "%s\\*.*", dirp);
 	if((hFind = FindFirstFile(sPath, &fdFile)) == INVALID_HANDLE_VALUE)
 	{
-		return 0;
+		return size;
 	}
 	
-	int size = 0;
 	do
 	{
 		if(strcmp(fdFile.cFileName, ".") != 0 && strcmp(fdFile.cFileName, "..") != 0)

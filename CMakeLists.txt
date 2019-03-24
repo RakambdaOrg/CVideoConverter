@@ -11,7 +11,7 @@ ELSE ()
     link_directories(/usr/local/lib)
 ENDIF ()
 
-set(SOURCE_FILES Main.cpp Database.cpp Database.h VInfos.h IOException.h Processor.cpp Processor.h NotUsedException.cpp NotUsedException.h)
+set(SOURCE_FILES Main.cpp Database.cpp Database.h Processor.cpp Processor.h VInfos.h IOException.h NotUsedException.cpp NotUsedException.h)
 add_executable(VideoNormalizer ${SOURCE_FILES})
 
 IF (WIN32)
