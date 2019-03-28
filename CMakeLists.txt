@@ -29,4 +29,4 @@ target_sources(VideoNormalizer
         )
 
 
-target_link_libraries(VideoNormalizer PUBLIC ${LIBAV_UTIL_LIBRARY} ${LIBAV_FORMAT_LIBRARY} ${LIBAV_CODEC_LIBRARY} ${SQLITE_LIBRARY} -static)
+target_link_libraries(VideoNormalizer PUBLIC ${LIBAV_UTIL_LIBRARY} ${LIBAV_FORMAT_LIBRARY} ${LIBAV_CODEC_LIBRARY} ${SQLITE_LIBRARY})
