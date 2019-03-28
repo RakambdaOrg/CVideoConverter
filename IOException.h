@@ -1,8 +1,0 @@
-#ifndef VIDEONORMALIZER_IOEXCEPTION_H
-#define VIDEONORMALIZER_IOEXCEPTION_H
-
-class IOException{
-
-};
-
-#endif
