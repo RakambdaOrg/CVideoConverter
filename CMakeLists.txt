@@ -7,6 +7,7 @@ set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 find_library(LIBAV_UTIL_LIBRARY NAMES libavutil avutil HINTS ${CMAKE_PREFIX_PATH}/lib/windows/ffmpeg)
 find_library(LIBAV_FORMAT_LIBRARY NAMES libavformat avformat HINTS ${CMAKE_PREFIX_PATH}/lib/windows/ffmpeg)
 find_library(LIBAV_CODEC_LIBRARY NAMES libavcodec avcodec HINTS ${CMAKE_PREFIX_PATH}/lib/windows/ffmpeg)
+find_library(SQLITE_LIBRARY NAMES sqlite3)
 
 IF (WIN32)
     include_directories(include/windows/libav)
