@@ -77,6 +77,8 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 	vInfos->type = 'U';
 	convertTime(vInfos->stringDuration, (int) vInfos->duration);
 	
+	//AVFormatContext * pFormatCtx = avformat_alloc_context();
+	
 #ifndef WIN32
 	AVFormatContext * pFormatCtx = avformat_alloc_context();
 	int errorID = avformat_open_input(&pFormatCtx, filename, nullptr, nullptr);
