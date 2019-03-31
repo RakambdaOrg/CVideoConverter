@@ -28,5 +28,4 @@ target_sources(VideoNormalizer
         ${CMAKE_CURRENT_SOURCE_DIR}/src/headers/VInfos.h
         )
 
-
 target_link_libraries(VideoNormalizer PUBLIC ${LIBAV_UTIL_LIBRARY} ${LIBAV_FORMAT_LIBRARY} ${LIBAV_CODEC_LIBRARY} ${SQLITE_LIBRARY})
