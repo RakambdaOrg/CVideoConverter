@@ -347,6 +347,19 @@ int Processor::process()
 	return newScripts;
 }
 
+int Processor::compareFileinfo(const void * a, const void * b)
+{
+	fileinfo * fa = *((fileinfo **) a);
+	fileinfo * fb = *((fileinfo **) b);
+	
+	return strcmp(fa->name, fb->name);
+}
+
+void Processor::sortFiles(fileinfo ** namelist, int size)
+{
+	qsort(namelist, size, sizeof(fileinfo *), compareFileinfo);
+}
+
 int Processor::getFiles(const char * dirp, fileinfo *** namelist)
 {
 #ifdef WIN32
@@ -376,6 +389,8 @@ int Processor::getFiles(const char * dirp, fileinfo *** namelist)
 	} while(FindNextFile(hFind, &fdFile));
 	
 	FindClose(hFind);
+	
+	sortFiles(*namelist, size);
 	
 	return size;
 #else
