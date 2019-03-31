@@ -193,11 +193,11 @@ int Processor::process()
 		if(file->isDirectory)
 		{
 			char * temp = scat(folderInWindows, file->name);
-			char * nFolderInWindows = scat(temp, "\\");
+			char * nFolderInWindows = scat(temp, "/");
 			free(temp);
 			
 			temp = scat(folderOutWindows, file->name);
-			char * nFolderOutWindows = scat(temp, "\\");
+			char * nFolderOutWindows = scat(temp, "/");
 			free(temp);
 			
 			temp = scat(folderInProcess, file->name);
