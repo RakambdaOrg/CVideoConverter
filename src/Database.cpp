@@ -19,7 +19,18 @@ void Database::setUseless(char * name)
 	//std::cout << "\t" << "Setting useless " << name;
 	int data = 0;
 	char * zErrMsg = nullptr;
-	sqlite3_exec(sqllite, (std::string("INSERT INTO Done(FilePath) VALUES('") + std::string(name) + std::string("');")).c_str(), callback, &data, &zErrMsg);
+	sqlite3_exec(sqllite, (std::string("INSERT INTO Done(FilePath) VALUES('") + std::string(replace_char(name, '\\', '/')) + std::string("');")).c_str(), callback, &data, &zErrMsg);
+}
+
+char * Database::replace_char(char * str, char find, char replace)
+{
+	char * current_pos = strchr(str, find);
+	while(current_pos)
+	{
+		*current_pos = replace;
+		current_pos = strchr(current_pos, find);
+	}
+	return str;
 }
 
 Database::Database(char * filepath)
@@ -97,7 +108,7 @@ bool Database::isUseless(char * string, bool * result)
 {
 	char * zErrMsg = nullptr;
 	int nrecs = 0;
-	std::string tmp = std::string("SELECT * FROM Done WHERE FilePath='") + std::string(string) + std::string("';");
+	std::string tmp = std::string("SELECT * FROM Done WHERE FilePath='") + std::string(replace_char(string, '\\', '/')) + std::string("';");
 	*result = sqlite3_exec(sqllite, tmp.c_str(), select_callback, &nrecs, &zErrMsg) == SQLITE_OK && nrecs > 0;
 	return *result;
 }

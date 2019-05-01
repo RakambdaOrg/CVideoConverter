@@ -191,11 +191,11 @@ void Processor::process(int * newScripts, int * processedFiles)
 		if(file->isDirectory)
 		{
 			char * temp = scat(folderInWindows, file->name);
-			char * nFolderInWindows = scat(temp, "\\");
+			char * nFolderInWindows = scat(temp, "/");
 			free(temp);
 			
 			temp = scat(folderOutWindows, file->name);
-			char * nFolderOutWindows = scat(temp, "\\");
+			char * nFolderOutWindows = scat(temp, "/");
 			free(temp);
 			
 			temp = scat(folderInProcess, file->name);
@@ -344,6 +344,19 @@ void Processor::process(int * newScripts, int * processedFiles)
 #pragma clang diagnostic pop
 }
 
+int Processor::compareFileinfo(const void * a, const void * b)
+{
+	fileinfo * fa = *((fileinfo **) a);
+	fileinfo * fb = *((fileinfo **) b);
+	
+	return strcmp(fa->name, fb->name);
+}
+
+void Processor::sortFiles(fileinfo ** namelist, int size)
+{
+	qsort(namelist, size, sizeof(fileinfo *), compareFileinfo);
+}
+
 int Processor::getFiles(const char * dirp, fileinfo *** namelist)
 {
 #ifdef WIN32
@@ -373,6 +386,8 @@ int Processor::getFiles(const char * dirp, fileinfo *** namelist)
 	} while(FindNextFile(hFind, &fdFile));
 	
 	FindClose(hFind);
+	
+	sortFiles(*namelist, size);
 	
 	return size;
 #else

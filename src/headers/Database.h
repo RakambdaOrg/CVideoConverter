@@ -26,6 +26,8 @@ private:
 	const char * getDatetime(char * buffer, const char * filename);
 
 public:
+	char* replace_char(char* str, char find, char replace);
+	
 	bool isUseless(char * string, bool * result);
 	
 	void setUseless(char * name);

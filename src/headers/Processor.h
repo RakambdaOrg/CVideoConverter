@@ -104,6 +104,10 @@ private:
 	static bool fileExists(const char * name);
 	
 	static int getFiles(const char * dirp, fileinfo *** namelist);
+	
+	static void sortFiles(fileinfo ** namelist, int size);
+	
+	static int compareFileinfo(const void * a, const void * b);
 };
 
 #endif
