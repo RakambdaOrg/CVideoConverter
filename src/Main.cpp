@@ -33,9 +33,12 @@ int main(int argc, char ** argv)
 	auto * database = new Database(databasePath);
 	free(databasePath);
 	
+	int newScripts = 0;
+	int processedFiles = 0;
+	
 	auto * processor = new Processor(database, folderInProcess, folderInWindows, folderOutWindows, folderOutProcess, folderBatWindows);
-	int scripts = processor->process();
-	std::cout << std::endl << "New scripts created: " << scripts;
+	processor->process(&newScripts, &processedFiles);
+	std::cout << std::endl << "New scripts created: " << newScripts << " (processed " << processedFiles << " files)";
 	
 	delete processor;
 	delete database;

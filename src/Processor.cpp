@@ -155,9 +155,8 @@ char * Processor::asMP4(const char * filename)
 	return nFilename;
 }
 
-int Processor::process()
+void Processor::process(int * newScripts, int * processedFiles)
 {
-	int newScripts = 0;
 	std::cout << std::endl << "Processing folder " << folderInWindows << std::endl;
 
 #ifdef WIN32
@@ -177,7 +176,6 @@ int Processor::process()
 	if(namelistSize < 0)
 	{
 		std::cout << "Error scanning directory " << folderInProcess << std::endl;
-		return 0;
 	}
 	
 	while(currentIndex < namelistSize) //Loop through all the files
@@ -205,7 +203,7 @@ int Processor::process()
 			free(temp);
 			
 			auto * processor = new Processor(database, nFolderInProcess, nFolderInWindows, nFolderOutWindows, folderOutProcess, folderBatWindows);
-			newScripts += processor->process();
+			processor->process(newScripts, processedFiles);
 			delete processor;
 			
 			free(nFolderOutWindows);
@@ -230,6 +228,7 @@ int Processor::process()
 			continue;
 		}
 		std::cout << "\t" << "o";
+		(*processedFiles)++;
 		//std::cout << "Processing file " << filePath << std::endl;
 		VInfos * vInfos = nullptr;
 		
@@ -304,7 +303,7 @@ int Processor::process()
 #endif
 						fclose(batFile);
 						std::cout << "W";
-						newScripts++;
+						(*newScripts)++;
 						//std::cout << std::endl << "\tWrote file " << fileBatMac << "." << std::endl;
 					}
 					else
@@ -343,8 +342,6 @@ int Processor::process()
 	
 	free(namelist);
 #pragma clang diagnostic pop
-	
-	return newScripts;
 }
 
 int Processor::getFiles(const char * dirp, fileinfo *** namelist)

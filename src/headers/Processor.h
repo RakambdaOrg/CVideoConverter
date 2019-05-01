@@ -38,7 +38,7 @@ public:
 	/**
 	 * Start this processor.
 	 */
-	int process();
+	void process(int * newScripts, int * processedFiles);
 	
 	/**
 		 * Concatenate 2 strings into a new one.
