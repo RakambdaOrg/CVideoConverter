@@ -88,7 +88,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 		if(errorStr == nullptr)
 			return vInfos;
 		av_strerror(errorID, errorStr, 100);
-		printf("ERROR: %s\n", errorStr);
+		std::cout << "ERROR: " << errorStr << std::endl;
 		free(errorStr);
 	}
 	else
@@ -246,7 +246,7 @@ void Processor::process(int * newScripts, int * processedFiles)
 		
 		database->registerVideo(database, vInfos);
 		
-		if(vInfos->fps > 0 && strcmp(vInfos->codec, "h264") == 0) //If we want to convert the video.
+		if(vInfos->fps > 0 && (strcmp(vInfos->codec, "h264") == 0 || strcmp(vInfos->codec, "mjpeg") == 0)) //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 			{
