@@ -94,7 +94,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 		
 		if(errorID == -1094995529){
 			if(remove(filename) == 0)
-				std::cout << "Deleted file successfully" << std::endl;
+				std::cout << "Deleted file " << filename << " successfully" << std::endl;
 			else
 				std::cout << "Unable to delete the file" << std::endl;
 		}
