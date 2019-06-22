@@ -88,7 +88,7 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 		if(errorStr == nullptr)
 			return vInfos;
 		av_strerror(errorID, errorStr, 100);
-		std::cout << "ERROR: " << errorStr << std::endl;
+		std::cout << "ERROR: (" << errorID << ") " << errorStr << std::endl;
 		free(errorStr);
 	}
 	else
