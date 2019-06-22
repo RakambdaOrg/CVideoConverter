@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <iostream>
 #include <libgen.h>
+#include <stdio.h>
 #include <sys/stat.h>
 
 extern "C" {
@@ -90,6 +91,13 @@ VInfos * Processor::getVInfos(char * filename, const char * name)
 		av_strerror(errorID, errorStr, 100);
 		std::cout << "ERROR: (" << errorID << ") " << errorStr << std::endl;
 		free(errorStr);
+		
+		if(errorID == -1094995529){
+			if(remove(filename) == 0)
+				std::cout << "Deleted file successfully" << std::endl;
+			else
+				std::cout << "Unable to delete the file" << std::endl;
+		}
 	}
 	else
 	{
