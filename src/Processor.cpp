@@ -156,7 +156,7 @@ char * Processor::asMP4(const char * filename)
 	if(strcmp(dot, ".mp4") != 0)
 	{
 		if(strlen(dot) < 4)
-			nFilename = (char *) realloc(&nFilename, sizeof(char) * ((dot - nFilename) + 5));
+			nFilename = (char *) realloc(nFilename, sizeof(char) * ((dot - nFilename) + 5));
 		dot = strrchr(nFilename, '.');
 		strcpy(dot, ".mp4");
 	}
@@ -254,7 +254,7 @@ void Processor::process(int * newScripts, int * processedFiles)
 		
 		database->registerVideo(database, vInfos);
 		
-		if(vInfos->fps > 0 && (strcmp(vInfos->codec, "h264") == 0 || strcmp(vInfos->codec, "mjpeg") == 0)) //If we want to convert the video.
+		if(strcmp(vInfos->codec, "h264") == 0 || strcmp(vInfos->codec, "mjpeg") == 0) //If we want to convert the video.
 		{
 			if(BUILD_BATCH)
 			{
